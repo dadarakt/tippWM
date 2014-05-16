@@ -1,0 +1,31 @@
+@(players: List[Player], playerForm: Form[Player])
+
+@import helper._
+
+@main("Spielerverwaltung") {
+
+<h1>Bisher machen @players.size Spieler mit: </h1>
+
+<ul>
+    @players.map { player=>
+    <li>
+        @player.toString
+
+        @form(routes.Application.deletePlayer(player.id)) {
+        <input type="submit" value="austragen">
+        }
+    </li>
+    }
+</ul>
+
+<h2>Neu hier? Trag dich ein:</h2>
+
+@form(routes.Application.newPlayer) {
+    @inputText(playerForm("firstName"))
+    @inputText(playerForm("lastName"))
+    @inputText(playerForm("nickName"))
+    @inputText(playerForm("password"))
+    <input type="submit" value="Create">
+}
+
+}

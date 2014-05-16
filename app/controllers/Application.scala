@@ -16,8 +16,13 @@ object Application extends Controller {
       "firstName" -> nonEmptyText,
       "lastName" -> text,
       "nickName" -> text,
+      "mail"     -> email,
       "password" -> nonEmptyText
     )(Player.apply)(Player.unapply)
+  )
+
+  val deleteForm = Form(
+    "password" -> nonEmptyText
   )
 
   def players = Action(
@@ -28,7 +33,7 @@ object Application extends Controller {
     playerForm.bindFromRequest.fold(
       errors => BadRequest(views.html.spieler(Player.all, errors)),
       player => {
-        Player.create(player.id, player.firstName, player.lastName, player.nickName, player.password)
+        Player.create(player.id, player.firstName, player.lastName, player.nickName, player.mail, player.password)
         Redirect(routes.Application.players)
       }
     )

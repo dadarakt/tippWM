@@ -1,0 +1,34 @@
+@main-color: red;
+
+.bg-img(@img) { background-image:url("../images/@{img}"); }
+
+h1 {
+    color:#FFFFFF;
+    background-color:#40566B;
+    font:bold 40px verdana, sans-serif;
+    letter-spacing:1px;
+    text-align:center;
+}
+
+h2 {
+    color:#40566B;
+    font:bold 30px verdana, sans-serif;
+}
+
+li {
+    color:#40566B;
+    font:14px verdana, sans-serif;
+    margin-left:20px;
+    letter-spacing:1px;
+}
+
+body {
+    color:#40566B;
+    letter-spacing:1px;
+    background-color:#b0c4de;
+    .bg-img("great_owl.png");
+    background-attachment:fixed;
+    background-repeat:no-repeat;
+    background-position:right top;
+}
+

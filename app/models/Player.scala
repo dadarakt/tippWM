@@ -10,8 +10,13 @@ import anorm.SqlParser._
 import play.api.db._
 import play.api.Play.current
 
-case class Player(firstName: String, lastName: String, nickName: String, password: String) {
-  val id = (firstName + lastName + nickName).hashCode
+case class Player(firstName: String,
+                  lastName: String,
+                  nickName: String,
+                  password: String,
+                  mail: String = ""){
+
+  val id:  Int = (firstName + lastName + nickName).hashCode
 
   override def toString = {
     val nicky = if(nickName.length > 0) s"\'$nickName\'" else ""
@@ -20,7 +25,8 @@ case class Player(firstName: String, lastName: String, nickName: String, passwor
 }
 
 object Player {
-
+  def apply(firstName:String, lastName:String, nickName:String, password:String) =
+    new Player(firstName, lastName, nickName, password)
   val player = {
     get[String]("firstName")~
     get[String]("lastName")~
@@ -36,14 +42,15 @@ object Player {
   }
 
 
-  def create(id: Int, firstName: String, lastName: String, nickName: String, password: String) {
+  def create(id: Int, firstName: String, lastName: String, nickName: String, mail: String, password: String) {
     DB.withConnection { implicit conn =>
-      SQL("insert into player (id, firstName, lastName, nickName, password) values ({id},{firstName},{lastName},{nickName},{password})").on(
-        'id -> id,
-        'firstName -> firstName,
-        'lastName -> lastName,
-        'nickName -> nickName,
-        'password -> password
+      SQL("insert into player (id, firstName, lastName, nickName, mail, password) values ({id},{firstName},{lastName},{nickName},{mail},{password})").on(
+        'id         -> id,
+        'firstName  -> firstName,
+        'lastName   -> lastName,
+        'nickName   -> nickName,
+        'mail       -> mail,
+        'password   -> password
       ).executeUpdate
     }
   }

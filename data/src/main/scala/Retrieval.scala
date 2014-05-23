@@ -6,6 +6,7 @@
 import java.text.SimpleDateFormat
 import java.util.TimeZone
 import org.jsoup.Jsoup
+import scala.xml.MalformedAttributeException
 import scalaj.http.Http
 import scalaj.http.HttpOptions
 import scala.collection.JavaConversions._
@@ -44,7 +45,7 @@ object Retrieval {
       else throw new RuntimeException("Error in the number of teams")
     }
 
-    (for {
+      (for {
       (team, pos) <- teamsRaw.getElementsByTag("team").zipWithIndex
     } yield  new Team(
         team.getElementsByTag("teamname").text,
@@ -68,10 +69,8 @@ object Retrieval {
       </soap12:Envelope>)
 
     val groupOrderIds = result.getElementsByTag("grouporderid").text.split(' ').toList
-    println(s"$groupOrderIds")
 
     val groupOrderId = groupOrderIds(0)
-    println(groupOrderId)
     // Then go on to find the matches for the group
     val gamesRaw = getDataOnline(
       <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -143,18 +142,33 @@ object Retrieval {
 
     // parses a line from the file which represents a player
     def parseSingleResponse(response: List[String]): Player = {
+
+      println(response.length)
+
       val firstName = response(1)
       val lastName  = response(2)
       val nickName  = response(3)
       val email     = response(4)
 
       // The initial tipps for the winners of the cup
-      val first   = response(response.length - 3 )
-      val second  = response(response.length - 2)
-      val third   = response(response.length - 1)
+      val first   = Team.allTeams.find(_.name == (response(response.length - 3))) match {
+        case Some(t) => t
+        case None =>
+          throw new MalformedAttributeException(s"The name of the first placed team for $email is unknown!")
+      }
+      val second  = Team.allTeams.find(_.name == (response(response.length - 2))) match {
+        case Some(t) => t
+        case None =>
+          throw new MalformedAttributeException(s"The name of the second placed team for $email is unknown!")
+      }
+      val third   = Team.allTeams.find(_.name == (response(response.length - 1))) match {
+        case Some(t) => t
+        case None =>
+          throw new MalformedAttributeException(s"The name of the third placed team for $email is unknown!")
+      }
 
       val tipps = for{
-        (tipp , index)<- response.drop(5).zipWithIndex
+        (tipp , index)<- response.drop(5).take(48).zipWithIndex
         tipps = tipp.split(':').toList.map(_.toInt)
       } yield(new Tipp(
           Match.allMatches(index).id,
@@ -162,12 +176,12 @@ object Retrieval {
           tipps(0),
           tipps(1)
         ))
-      new Player(firstName, lastName, nickName, email, tipps.toList)
+      new Player(firstName, lastName, nickName, email, tipps.toList, first, second, third)
     }
 
     (for{
       responseLine <- rawData
-      response = responseLine.split(',').toList if(!response.isEmpty)
+      response = responseLine.split(',').toList if(!response.isEmpty && response(0) != "")
     } yield(parseSingleResponse(response))).toList
 
   }

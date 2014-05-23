@@ -5,17 +5,11 @@ import java.util.Date
  */
 
 object Data {
-  def main(args: Array[String]){
-    //getAllGames
-    //getAllTeams
-    val start = System.currentTimeMillis()
-    val aha = Group.allGroups
 
-    println(s"${Match.playedMatches.length}")
-    println(s"${Player.allPlayers(0).results}")
+}
 
-    println(s"It took: ${System.currentTimeMillis() - start} ms ")
-  }
+class State {
+
 }
 
 case class Team(name: String, id: Int, group: Char, iconUrl: String){
@@ -28,11 +22,47 @@ object Team {
 
 case class Group(name: Char,
                  teams: Set[Team],
-                 games: List[Match]
-)
+                 matches: List[Match]){
+
+  // name, gamesplayed, scored, gotten, diff, points
+  val ranking: List[(String,Int,Int,Int,Int,Int)] =
+  {
+    // The maps to keep the scores
+    var points      = Map[String, Int]()
+    var goalsScored = Map[String, Int]()
+    var goalsGotten = Map[String, Int]()
+
+    for(team <- teams){
+      points += (team.name -> 0)
+      goalsScored += (team.name -> 0)
+      goalsGotten += (team.name -> 0)
+    }
+
+    for {
+      m <- matches.filter(_.isFinished)
+      (pointsA, pointsB) = if(m.scoreA > m.scoreB) (3,0) else if (m.scoreA == m.scoreB) (1,1) else (0,3)
+    }{
+      points      ++= Map((m.teamA -> (points(m.teamA) + pointsA)),(m.teamB -> (points(m.teamB) + pointsB)))
+      goalsScored ++= Map((m.teamA -> (goalsScored(m.teamA) + m.scoreA)), (m.teamB -> (goalsScored(m.teamB) + m.scoreB)))
+      goalsGotten ++= Map((m.teamA -> (goalsGotten(m.teamA) + m.scoreB)), (m.teamB -> (goalsGotten(m.teamB) + m.scoreA)))
+    }
+
+    (points.map{ t =>
+      val name = t._1
+      (name, matches.filter(m => m.teamA == name || m.teamB == name).length,
+        goalsScored(name), goalsGotten(name), goalsScored(name) - goalsGotten(name), points(name))
+    }).toList.sortBy(- _._6)
+
+  }
+
+  override def toString = {
+    ranking.mkString("\n")
+  }
+
+}
 
 object Group {
-  lazy val allGroups: List[Group] = {
+  val allGroups: List[Group] = {
     val mapping = Team.allTeams.groupBy(_.group)
     (for{
       groupName <- mapping.keys
@@ -40,6 +70,13 @@ object Group {
         mapping(groupName).toSet,
         Match.allMatches.filter(_.group == groupName))).toList.sortBy(_.name)
   }
+  assert(allGroups.forall(_.teams.size == 4))
+  assert(allGroups.forall(_.matches.size == 6))
+
+  def allGroupsString = {
+    allGroups.mkString("\n--------------------------------------------\n")
+  }
+
 }
 
 
@@ -66,6 +103,7 @@ case class Match(teamA: String,
 object Match {
   lazy val allMatches: List[Match] = Retrieval.getAllGamesVorrunde.sortBy(_.group)
   lazy val playedMatches: List[Match] = allMatches.filter(_.isFinished).sortBy(_.date)
+  def lastMatch = playedMatches.view.sortBy(_.date).last
 }
 
 case class Tipp(matchId: Int, playerId: String, scoreA: Int, scoreB: Int)
@@ -184,168 +222,32 @@ case class Stats( playerId:             String,
 }
 
 
-case class Player(firstName: String, lastName: String, nickName: String, email: String, tipps: List[Tipp]){
+case class Player(firstName: String,
+                  lastName: String,
+                  nickName: String,
+                  email: String,
+                  tipps: List[Tipp],
+                  tippFirst: Team,
+                  tippSecond: Team,
+                  tippThird: Team){
+
   val id = firstName + lastName + nickName
+
   lazy val gamesTipped = Match.playedMatches
+
   val results = Tipp.evaluateTipps(tipps, id)
+
+  override def toString = {
+    s"$firstName '$nickName' $lastName with " +
+      s"${results.points} points from ${results.scoredMatches.length} scored matches. (${results.tendencies} tends, " +
+      s"${results.diffs} diffs and ${results.hits} hits correct)"
+  }
 }
 
 object Player {
   lazy val allPlayers = Retrieval.getAllPlayers
-
+  lazy val rankedPlayers = allPlayers.sortBy(- _.results.points)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//object Data {
-
-//  val (games, groups) = parseTable("src/main/resources/teams.csv")
-//  val responses = parseResponses("src/main/resources/responses.csv")
-//
-//  def main(args: Array[String]) = {
-//    //println(responses)
-//
-//  }
-//
-//  def parseResponses(filename: String): List[Player]= {
-//    val rawData = scala.io.Source.fromFile(filename).getLines
-//    val header = rawData.next
-//
-//    def parseSingleResponse(response: List[String]): Player = {
-//      val firstName = response(1)
-//      val lastName  = response(2)
-//      val nickName  = response(3)
-//      val email     = response(4)
-//
-//      val first   = response(response.length - 3 )
-//      val second  = response(response.length - 2)
-//      val third   = response(response.length - 1)
-//
-//      var index = 0
-//      val tipps = for{
-//        tipp <- response.drop(5)
-//        tipps = tipp.split(':').toList.map(_.toInt)
-//      } yield(new Tipp(
-//          games(index),
-//          tipps(0),
-//          tipps(1)
-//        ))
-//      new Player(firstName, lastName, nickName, email, tipps.toList)
-//    }
-//
-//    (for{
-//      responseLine <- rawData
-//      response = responseLine.split(',').toList if(!response.isEmpty)
-//    } yield(parseSingleResponse(response))).toList
-//  }
-//
-//  def parseTable(filename: String) = {
-//    val start = System.currentTimeMillis
-//
-//    // import the csv file
-//    val rawData  = scala.io.Source.fromFile(filename).getLines.toList
-//
-//    def parseTeams: Set[Team] = {
-//      val firstLine = rawData.head.split(',').toList
-//      (for{
-//        (team, pos) <- firstLine.zipWithIndex
-//      } yield new Team(team, ('A' + pos/6).toChar)).toSet
-//    }
-//
-//    val teams = parseTeams
-//
-//
-//
-//    def parseGames: List[Game] = {
-//      // A mapping for all the timezones
-//      val timezones = Map(
-//        "Sao Paulo" -> "GMT-03:00",
-//        "Natal" -> "GMT-03:00",
-//        "Fortaleza" -> "GMT-03:00",
-//        "Manaus" -> "GMT-4:00",
-//        "Brasilia" -> "GMT-3:00",
-//        "Recife" -> "GMT-3:00",
-//        "Salvador" -> "GMT-3:00",
-//        "Cuiaba" -> "GMT-4:00",
-//        "Porto Alegre" -> "GMT-3:00",
-//        "Rio de Janeiro" -> "GMT-3:00",
-//        "Curitiba" -> "GMT-3:00",
-//        "Belo Horizonte" -> "GMT-3:00"
-//      )
-//
-//      // Get all the games in the initial round of the tournament
-//      val teamsA = rawData(0).split(',').toList
-//      val teamsB = rawData(1).split(',').toList
-//      val dates  = rawData(2).split(',').toList
-//      val times  = rawData(3).split(',').toList
-//      val places = rawData(4).split(',').toList
-//
-//      val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy-hh")
-//
-//      // Create all the games and see which ones were played yet
-//      (for {
-//        (teamA, pos) <- teamsA.zipWithIndex
-//        teamAA  = teams.find(_.name == teamA).get
-//        teamB   = teams.find(_.name == teamsB(pos)).get
-//        place   = places(pos)
-//        date    = {
-//          dateFormat.setTimeZone(TimeZone.getTimeZone(timezones(place)))
-//          dateFormat.parse(s"${dates(pos)}-${times(pos).split(':').head}")
-//        }
-//        played  = {
-//          date.before(new java.util.Date(System.currentTimeMillis + (1000 * 60 * 60 * 4)))
-//        }
-//      } yield new Game(teamAA,
-//          teamB,
-//          teamAA.group,
-//          date,
-//          place,
-//          played)).toList.sortBy(_.date)
-//    }
-//
-//    val games = parseGames
-//
-//    for {
-//      game  <- games if (game.isDone)
-//    } (getResult(game))
-//
-//
-//    // TODO make this a little more sophisticated
-//    def getResult(game: Game) = {
-//      game.scoreA = 100
-//      game.scoreB = 100
-//    }
-//
-//    def makeGroups: List[Group] = {
-//      val mapping = teams.groupBy(_.group)
-//      (for{
-//        groupName <- mapping.keys
-//      } yield new Group(groupName,
-//          mapping(groupName),
-//          games.filter(_.group == groupName))).toList.sortBy(_.name)
-//    }
-//
-//    val groups = makeGroups
-//    val time = System.currentTimeMillis() - start
-//    println(s"<<<<< Run took $time ms >>>>>")
-//    (games, makeGroups)
-//  }
-
-
-//}
 

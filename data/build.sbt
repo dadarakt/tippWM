@@ -11,6 +11,7 @@ libraryDependencies ++= {
   Seq(
     "org.jsoup" % "jsoup" % "1.7.3",
     "org.scalaj" %% "scalaj-http" % "0.3.15",
-    "org.scalatest" % "scalatest_2.11" % "2.1.6" % "test"
+    "org.scalatest" % "scalatest_2.11" % "2.1.6" % "test",
+    "com.typesafe.akka" %% "akka-actor" % "2.3.3"
   )
 }

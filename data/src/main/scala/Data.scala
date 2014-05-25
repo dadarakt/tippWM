@@ -8,6 +8,7 @@ object Data {
 
 }
 
+// Generate the current state for serialization
 class State {
 
 }

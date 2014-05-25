@@ -12,6 +12,8 @@ libraryDependencies ++= {
     "org.jsoup" % "jsoup" % "1.7.3",
     "org.scalaj" %% "scalaj-http" % "0.3.15",
     "org.scalatest" % "scalatest_2.11" % "2.1.6" % "test",
-    "com.typesafe.akka" %% "akka-actor" % "2.3.3"
+    "com.typesafe.akka" %% "akka-actor" % "2.3.3",
+    "mysql" % "mysql-connector-java" % "5.1.17",
+    "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 }

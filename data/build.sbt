@@ -17,3 +17,10 @@ libraryDependencies ++= {
     "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 }
+
+fork := true
+
+javaOptions := Seq(
+  "-Dmx=2048M",
+  "-XX:MaxPermSize=512M"
+)

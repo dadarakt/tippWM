@@ -4,6 +4,7 @@ CREATE TABLE team (
 	id integer NOT NULL AUTO_INCREMENT,
 	name varchar(255) NOT NULL UNIQUE,
 	groupchar char NOT NULL,
+	round integer NOT NULL DEFAULT 1,
 	iconurl varchar(255) NOT NULL DEFAULT 'http://img3.wikia.nocookie.net/__cb20080619042358/football/en/images/5/5c/Football.png',
 	gamesplayed integer NOT NULL DEFAULT 0,
 	wins integer NOT NULL DEFAULT 0,

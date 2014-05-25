@@ -14,6 +14,12 @@ import json._
 
 object Database {
 
+  // credentials
+  val url   = "jdbc:mysql://localhost/tippwm"
+  val user  = "Jannis"
+  val pw    = ""
+
+  // for retrieving the data
   val leagueShortcut = "test-wm"
   val leagueID = 676
   val season = 2014
@@ -22,43 +28,40 @@ object Database {
   val driver = "com.mysql.jdbc.Driver"
   Class.forName(driver).newInstance
 
-  val url   = "jdbc:mysql://localhost/tippwm"
-  val user  = "Jannis"
-  val pw    = ""
 
+
+  // Initializes the tables into the given database, can only be done online
   def main(args: Array[String])= {
     // The database
-    val connData = new ConnData("jdbc:mysql://localhost/tippwm", "Jannis", "")
     initializePlayers
     initializeTeams
     initializeMatches
-
-
-    printTable(connData, "player")
   }
 
 
-  def printTable(connData: ConnData, table: String) = {
-    val conn = DriverManager.getConnection(connData.url, connData.username, connData.password)
-    try {
-      val statement = conn.createStatement()
-      val result = statement.executeQuery(s"select * from $table")
-
-      while (result.next()) {
-        println(s"" +
-          s"${result.getString("firstname")}, ${result.getString("lastname")}, ${result.getString("nickname")}")
-        println(result.getString("tipps").unpickle[List[String]])
-      }
-    } catch {
-      case ex: scala.pickling.PicklingException =>   println(s"Error while deserialization, $ex")
-      case NonFatal(ex) => println(s"Could not connect to DB, $ex")
-    } finally {
-      conn.close()
-    }
-  }
+//  def printTable(connData: ConnData, table: String) = {
+//    val conn = DriverManager.getConnection(connData.url, connData.username, connData.password)
+//    try {
+//      val statement = conn.createStatement()
+//      val result = statement.executeQuery(s"select * from $table")
+//
+//      while (result.next()) {
+//        println(s"" +
+//          s"${result.getString("firstname")}, ${result.getString("lastname")}, ${result.getString("nickname")}")
+//        println(result.getString("tipps").unpickle[List[String]])
+//      }
+//    } catch {
+//      case ex: scala.pickling.PicklingException =>   println(s"Error while deserialization, $ex")
+//      case NonFatal(ex) => println(s"Could not connect to DB, $ex")
+//    } finally {
+//      conn.close()
+//    }
+//  }
 
   def initializeMatches: Unit = {
-    val result = Retrieval.getDataOnline(
+
+    // There will be a set of groups from Vorrunde to Final
+    val groupsRaw = Retrieval.getDataOnline(
       <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
         <soap12:Body>
           <GetAvailGroups xmlns="http://msiggi.de/Sportsdata/Webservices">
@@ -68,9 +71,9 @@ object Database {
         </soap12:Body>
       </soap12:Envelope>)
 
-    val groupOrderIds = result.getElementsByTag("grouporderid").text.split(' ').toList
-
+    val groupOrderIds = groupsRaw.getElementsByTag("grouporderid").text.split(' ').toList
     val groupOrderId = groupOrderIds(0)
+
     // Then go on to find the matches for the group
     val gamesRaw = Retrieval.getDataOnline(
       <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -84,10 +87,10 @@ object Database {
       </soap12:Envelope>
     ).getElementsByTag("matchdata")
 
-    // Usa a nice date format
-    val dateformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-    dateformat.setTimeZone(TimeZone.getTimeZone("utc"))
-    val sqldateformat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    // use date formats to parse from raw and then to save it to mysql
+    val rawDateformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    rawDateformat.setTimeZone(TimeZone.getTimeZone("utc"))
+    val sqlDateformat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
     // Get the games as the datastructure and return them
@@ -113,7 +116,7 @@ object Database {
       } else {
         (-1, -1)
       }
-      val date          = sqldateformat.format(dateformat.parse(game.getElementsByTag("matchdatetimeutc").text))
+      val date          = sqlDateformat.format(rawDateformat.parse(game.getElementsByTag("matchdatetimeutc").text))
       val location      = game.getElementsByTag("locationcity").text
       val stadium       = game.getElementsByTag("locationstadium").text
       val onlineId      = game.getElementsByTag("matchid").text.toInt
@@ -175,7 +178,7 @@ object Database {
       try {
         val conn = DriverManager.getConnection(url, user, pw)
         val statement = conn.createStatement
-        statement.execute(s"INSERT INTO team VALUES (DEFAULT, '$name', '$group', '$icon', DEFAULT, " +
+        statement.execute(s"INSERT INTO team VALUES (DEFAULT, '$name', '$group', DEFAULT, '$icon', DEFAULT, " +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added team $name, in group $group to the DB.")
         conn.close()
@@ -234,7 +237,7 @@ object Database {
         val conn = DriverManager.getConnection(url, user, pw)
         val statement = conn.createStatement
         statement.execute(s"INSERT INTO player VALUES (DEFAULT, '$firstName', '$lastName', '$nickName', '$email', " +
-          s"'$first', '$second', '$third', '$tipps', " +
+          s"'$first', '$second', '$third', '$tipps', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT," +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added player $firstName, $lastName to the DB.")
 
@@ -249,9 +252,5 @@ object Database {
       responseLine <- rawData
       response = responseLine.split(',').toList if(!response.isEmpty && response(0) != "")
     } (parseSingleResponse(response))
-
   }
-
-  case class ConnData(url: String, username: String, password: String)
-
 }

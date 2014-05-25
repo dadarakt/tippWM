@@ -1,17 +1,19 @@
 import java.util.Date
+import Database.{url,user,pw}
+
 
 /**
  * Defines the needed datastructures to represent the worlcup
  */
 
 object Data {
+  val driver = "com.mysql.jdbc.Driver"
+  Class.forName(driver).newInstance
+  def main(args: Array[String]) = {
 
+  }
 }
 
-// Generate the current state for serialization
-class State {
-
-}
 
 case class Team(name: String, id: Int, group: Char, iconUrl: String){
   override def toString = s"($name, $group)"
@@ -63,6 +65,18 @@ case class Group(name: Char,
 }
 
 object Group {
+
+  def getGroup(name: Char): Group = {
+
+    val teams = try {
+
+    }
+
+
+    new Group(name, Set(), List())
+  }
+
+
   val allGroups: List[Group] = {
     val mapping = Team.allTeams.groupBy(_.group)
     (for{

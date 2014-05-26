@@ -1,6 +1,5 @@
 import java.text.SimpleDateFormat
 import java.util.TimeZone
-import scala.util.control.NonFatal
 import java.sql.DriverManager
 import scala.collection.JavaConversions._
 import scala.xml.MalformedAttributeException
@@ -9,17 +8,17 @@ import json._
 
 /**
  * Created by Jannis on 5/23/14.
- * Loads all the data and writes it to the database
+ * Loads all the data and writes it to the database. Also setups the driver.
+ * All classes use the credentials from here.
  */
 
 object Database {
-
   // credentials
   val url   = "jdbc:mysql://localhost/tippwm"
   val user  = "Jannis"
   val pw    = ""
 
-  // for retrieving the data
+  // for retrieving the data online
   val leagueShortcut = "test-wm"
   val leagueID = 676
   val season = 2014
@@ -28,35 +27,26 @@ object Database {
   val driver = "com.mysql.jdbc.Driver"
   Class.forName(driver).newInstance
 
-
-
   // Initializes the tables into the given database, can only be done online
-  def main(args: Array[String])= {
+  def main(args: Array[String]) = {
     // The database
-    initializePlayers
+//    loadData
+    println(Player.allPlayers.mkString("\n\n"))
+    println(Match.allMatches.mkString("\n\n"))
+  }
+
+  def loadData = {
     initializeTeams
     initializeMatches
+    initializePlayers
   }
 
 
-//  def printTable(connData: ConnData, table: String) = {
-//    val conn = DriverManager.getConnection(connData.url, connData.username, connData.password)
-//    try {
-//      val statement = conn.createStatement()
-//      val result = statement.executeQuery(s"select * from $table")
-//
-//      while (result.next()) {
-//        println(s"" +
-//          s"${result.getString("firstname")}, ${result.getString("lastname")}, ${result.getString("nickname")}")
-//        println(result.getString("tipps").unpickle[List[String]])
-//      }
-//    } catch {
-//      case ex: scala.pickling.PicklingException =>   println(s"Error while deserialization, $ex")
-//      case NonFatal(ex) => println(s"Could not connect to DB, $ex")
-//    } finally {
-//      conn.close()
-//    }
-//  }
+  def eraseAndSetup = {
+    import scala.sys.process._
+    // Call the scripts to initialize the tables if not there
+    println(s" Dropping all tables: ${"mysql" #< "src/main/resources/erase.sql" !}")
+  }
 
   def initializeMatches: Unit = {
 
@@ -92,7 +82,6 @@ object Database {
     rawDateformat.setTimeZone(TimeZone.getTimeZone("utc"))
     val sqlDateformat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-
     // Get the games as the datastructure and return them
     val conn = DriverManager.getConnection(url, user, pw)
     val statement = conn.createStatement
@@ -125,25 +114,20 @@ object Database {
       val groupname     = game.getElementsByTag("groupname").text
 
       try {
-
         statement.execute(s"INSERT INTO matches VALUES " +
           s"(DEFAULT, '$team1', '$team2', '$groupName', '$date', '$location', '$stadium', '$onlineId', " +
           s"'$groupId', '$grouporderid', '$groupname', '${if(isFinished)1 else 0}', '$score1', '$score2')")
         println(s"Added match $team1 vs. $team2, in group $groupname to the DB with result $team1:$team2")
-
       } catch {
         case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
           println(s"Match $team1 vs $team2 in group $groupname was already in the DB. Not creating entry!!!")
       }
     }
     conn.close
-
   }
 
 
   def initializeTeams: Unit = {
-
-    // Get all the teams:
     val teamsRaw = Retrieval.getDataOnline(
       <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
         <soap12:Body>
@@ -168,17 +152,19 @@ object Database {
       else throw new RuntimeException("Error in the number of teams")
     }
 
+    // Get all teams
     for {
       (team, pos) <- teamsRaw.getElementsByTag("team").zipWithIndex
       name  = team.getElementsByTag("teamname").text
+      onlineId = team.getElementsByTag("teamid").text.toInt
       group = groupName(pos)
       icon  = team.getElementsByTag("teamiconurl").text
     } {
-      // And create his entry
+      // And create the entry
       try {
         val conn = DriverManager.getConnection(url, user, pw)
         val statement = conn.createStatement
-        statement.execute(s"INSERT INTO team VALUES (DEFAULT, '$name', '$group', DEFAULT, '$icon', DEFAULT, " +
+        statement.execute(s"INSERT INTO team VALUES (DEFAULT, '$onlineId', '$name', '$group', DEFAULT, '$icon', DEFAULT, " +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added team $name, in group $group to the DB.")
         conn.close()
@@ -186,51 +172,43 @@ object Database {
       } catch {
         case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
           println(s"Team $name in group $group was already in the DB. Not creating entry!!!")
+        case ex: java.sql.SQLException =>
+          println(s"Could not add team $name in group $group. Not creating entry!!! $ex")
       }
     }
   }
 
-  // TODO so far this only loads the players names into a table, not their tipps
   def initializePlayers = {
-    val filename = "src/main/resources/responses.csv"
-    val rawData = scala.io.Source.fromFile(filename).getLines
-    val header = rawData.next
+    val filename    = "src/main/resources/responses.csv"
+    val rawData     = scala.io.Source.fromFile(filename).getLines
+    val header      = rawData.next
+    val allMatches  = Match.allMatches
+
+    val conn = DriverManager.getConnection(url, user, pw)
+    val statement = conn.createStatement
 
     // parses a line from the file which represents a player
     def parseSingleResponse(response: List[String]): Unit = {
-
-      // Get all the data for one player
       val firstName = response(1)
       val lastName  = response(2)
       val nickName  = response(3)
       val email     = response(4)
 
       // The initial tipps for the winners of the cup
-      val first   = Team.allTeams.find(_.name == (response(response.length - 3))) match {
-        case Some(t) => t
-        case None =>
-          throw new MalformedAttributeException(s"The name of the first placed team for $email is unknown!")
-      }
-      val second  = Team.allTeams.find(_.name == (response(response.length - 2))) match {
-        case Some(t) => t
-        case None =>
-          throw new MalformedAttributeException(s"The name of the second placed team for $email is unknown!")
-      }
-      val third   = Team.allTeams.find(_.name == (response(response.length - 1))) match {
-        case Some(t) => t
-        case None =>
-          throw new MalformedAttributeException(s"The name of the third placed team for $email is unknown!")
-      }
+      val first   = response(response.length - 3)
+      val second  = response(response.length - 2)
+      val third   = response(response.length - 1)
 
-      // Get all the tipps and save them with their game's online ID
+      // Get all the tipps and save them with their game's online ID (serizalized)
       val tipps = (for{
-        (tipp , index)<- response.drop(5).take(48).zipWithIndex
+        (tipp , index) <- response.drop(5).take(48).zipWithIndex
         tipps = tipp.split(':').toList.map(_.toInt)
       } yield new Tipp(
-          Match.allMatches(index).id,
+          allMatches(index).onlineId,
           firstName + lastName + nickName,
           tipps(0),
-          tipps(1))).pickle.value
+          tipps(1))
+      ).pickle.value
 
       // Save the player to the database
       try {
@@ -240,7 +218,6 @@ object Database {
           s"'$first', '$second', '$third', '$tipps', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT," +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added player $firstName, $lastName to the DB.")
-
       } catch {
         case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
           println(s"Player $firstName, $lastName was already in the DB. Not creating entry!!!")

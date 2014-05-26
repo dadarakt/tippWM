@@ -2,6 +2,7 @@ USE tippwm
 
 CREATE TABLE team (
 	id integer NOT NULL AUTO_INCREMENT,
+	onlineid integer NOT NULL UNIQUE,
 	name varchar(255) NOT NULL UNIQUE,
 	groupchar char NOT NULL,
 	round integer NOT NULL DEFAULT 1,

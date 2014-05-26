@@ -8,7 +8,7 @@ CREATE TABLE matches (
 	date DATETIME NOT NULL,
 	location varchar(255) NOT NULL,
 	stadium varchar(255),
-	onlineid int NOT NULL UNIQUE,
+	onlineid integer NOT NULL UNIQUE,
 	groupid integer NOT NULL,
 	grouporderid integer NOT NULL,
 	groupname varchar(255),

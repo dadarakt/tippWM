@@ -1,32 +1,34 @@
-@(players: List[Player], playerForm: Form[Player])
-
-@import helper._
+@(players: List[Player])
 
 @main("Spielerverwaltung") {
-    <h1>Wer macht mit?</h1>
-
-    <h2>Bisher sind @players.size Spieler dabei: </h2>
-
+    <h3>Bisher sind @players.size Spieler dabei: </h3>
     <ul>
         @players.map { player=>
         <li>
-            @player.toString @form(routes.Application.deletePlayer(player.id)) {
-            <input type="submit" value="austragen">
-            }
+            @player.toString
         </li>
         }
     </ul>
 
+    <table style="width:300px">
+        <tr>
+            <td>Jill</td>
+            <td>Smith</td>
+            <td>50</td>
+        </tr>
+        <tr>
+            <td>Eve</td>
+            <td>Jackson</td>
+            <td>94</td>
+        </tr>
+        <tr>
+            <td>John</td>
+            <td>Doe</td>
+            <td>80</td>
+        </tr>
+    </table>
     <hr>
-    <h2>Neu hier? Trag dich ein:</h2>
 
-
-    @form(routes.Application.newPlayer) {
-        @inputText(playerForm("firstName"))
-        @inputText(playerForm("lastName"))
-        @inputText(playerForm("nickName"))
-        @inputText(playerForm("mail"))
-        @inputText(playerForm("password"))
-        <input type="submit" value="eintragen">
-    }
+    <h3>Neu hier? Trag dich ein:</h3>
+    <a href="https://docs.google.com/forms/d/1es-i1gmxV3mmPajMNDHVLPx30KJkpBAhsoNj1FzWa_s/viewform?usp=send_form" target="_blank">Anmeldeformular</a>
 }

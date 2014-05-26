@@ -1,34 +1,41 @@
-@main-color: red;
-
 .bg-img(@img) { background-image:url("../images/@{img}"); }
 
 h1 {
     color:#FFFFFF;
-    background-color:#40566B;
     font:bold 40px verdana, sans-serif;
     letter-spacing:1px;
     text-align:center;
 }
 
 h2 {
-    color:#40566B;
+    color:#B7AFA3;
     font:bold 30px verdana, sans-serif;
+    letter-spacing:1px;
+    text-align:center;
 }
 
-li {
-    color:#40566B;
-    font:14px verdana, sans-serif;
-    margin-left:20px;
-    letter-spacing:1px;
+h3 {
+    color:#E8D0A9;
+    font:bold 30px verdana, sans-serif;
 }
 
 body {
     color:#40566B;
+    background-color:#CCCCCC;
+    .bg-img("background3.png");
+    color:#40566B;
+    font:14px verdana, sans-serif;
     letter-spacing:1px;
-    background-color:#b0c4de;
-    .bg-img("great_owl.png");
-    background-attachment:fixed;
-    background-repeat:no-repeat;
-    background-position:right top;
+}
+
+table,th,td{
+    border:1px solid #40566B;
+    border-collapse:collapse;
+}
+
+a {
+    color:#40566B;
+    font:14px verdana, sans-serif;
+    letter-spacing:1px;
 }
 

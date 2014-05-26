@@ -13,10 +13,11 @@ import play.api.Play.current
 case class Player(firstName: String,
                   lastName: String,
                   nickName: String,
-                  password: String,
-                  mail: String = ""){
-
-  val id:  Int = (firstName + lastName + nickName).hashCode
+                  email: String,
+                  tipps: String,
+                  tippFirst: String,
+                  tippSecond: String,
+                  tippThird: String){
 
   override def toString = {
     val nicky = if(nickName.length > 0) s"\'$nickName\'" else ""
@@ -25,14 +26,28 @@ case class Player(firstName: String,
 }
 
 object Player {
-  def apply(firstName:String, lastName:String, nickName:String, password:String) =
-    new Player(firstName, lastName, nickName, password)
+
+  // parser to read a player from the DB
   val player = {
     get[String]("firstName")~
     get[String]("lastName")~
     get[String]("nickName")~
-    get[String]("password") map {
-      case firstName~lastName~nickName~password => Player(firstName, lastName, nickName, password)
+    get[String]("email")~
+    get[String]("tipps1")~
+    get[String]("guessfirst")~
+    get[String]("guesssecond")~
+    get[String]("guessthird") map {
+      case firstName~lastName~nickName~email~tipps1~guessfirst~guesssecond~guessthird =>
+        Player(firstName, lastName, nickName, email, tipps1,guessfirst, guesssecond, guessthird)
+    }
+  }
+
+  val simplePlayer = {
+    get[String]("firstName")~
+    get[String]("lastName")~
+    get[String]("nickName") map {
+      case firstName~lastName~nickName =>
+        Player(firstName, lastName, nickName, "", "", "","","")
     }
   }
 
@@ -42,15 +57,14 @@ object Player {
   }
 
 
-  def create(id: Int, firstName: String, lastName: String, nickName: String, mail: String, password: String) {
+  def create(id: Int, firstName: String, lastName: String, nickName: String, mail: String) {
     DB.withConnection { implicit conn =>
-      SQL("insert into player (id, firstName, lastName, nickName, mail, password) values ({id},{firstName},{lastName},{nickName},{mail},{password})").on(
+      SQL("insert into player (id, firstName, lastName, nickName, mail) values ({id},{firstName},{lastName},{nickName},{mail})").on(
         'id         -> id,
         'firstName  -> firstName,
         'lastName   -> lastName,
         'nickName   -> nickName,
-        'mail       -> mail,
-        'password   -> password
+        'mail       -> mail
       ).executeUpdate
     }
   }

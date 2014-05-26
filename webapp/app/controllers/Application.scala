@@ -11,33 +11,32 @@ object Application extends Controller {
     Ok(views.html.index("Willkommen zum Tippspiel!"))
   }
 
-  val playerForm = Form(
-    mapping(
-      "firstName" -> nonEmptyText,
-      "lastName" -> text,
-      "nickName" -> text,
-      "mail"     -> email,
-      "password" -> nonEmptyText
-    )(Player.apply)(Player.unapply)
-  )
+//  val playerForm = Form(
+//    mapping(
+//      "firstName" -> nonEmptyText,
+//      "lastName" -> text,
+//      "nickName" -> text,
+//      "mail"     -> email
+//    )(Player.apply)(Player.unapply)
+//  )
 
-  val deleteForm = Form(
-    "password" -> nonEmptyText
-  )
+//  val deleteForm = Form(
+//    "password" -> nonEmptyText
+//  )
 
   def players = Action(
-    Ok(views.html.spieler(Player.all, playerForm))
+    Ok(views.html.spieler(Player.all))
   )
 
-  def newPlayer = Action { implicit request =>
-    playerForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.spieler(Player.all, errors)),
-      player => {
-        Player.create(player.id, player.firstName, player.lastName, player.nickName, player.mail, player.password)
-        Redirect(routes.Application.players)
-      }
-    )
-  }
+//  def newPlayer = Action { implicit request =>
+//    playerForm.bindFromRequest.fold(
+//      errors => BadRequest(views.html.spieler(Player.all, errors)),
+//      player => {
+//        Player.create(player.id, player.firstName, player.lastName, player.nickName, player.mail)
+//        Redirect(routes.Application.players)
+//      }
+//    )
+//  }
 
   def deletePlayer(id: Int) = Action {
     Player.delete(id)

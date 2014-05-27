@@ -1,13 +1,8 @@
-@(players: List[Player])
+@(players: List[(Player,Int)])
 
 @main("Punkte") {
 <h3>Punktestand - Übersicht </h3>
 <h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @Player.lastUpdate</h2>
-
-@helper.form(action = routes.Application.index) {
-
-}
-
 
 <table>
     <tr>
@@ -15,13 +10,14 @@
         <th>Name</th>
         <th>Punkte</th>
     </tr>
-    @players.sortBy(_.points).reverse.zipWithIndex.map { case (player, pos)=>
-    <tr>
-        <td>@{pos+1}</td>
-        <td>@player.nameString</td>
-        <td>@player.points</td>
 
-    </tr>
+    @players.map {case (player, pos) =>
+        <tr>
+            <td>@{pos}</td>
+            <td><a href="#" style=";text-decoration:none;">@player.nameString</a></td>
+            <td>@player.points</td>
+        </tr>
+
     }
 </table><br><br>
 

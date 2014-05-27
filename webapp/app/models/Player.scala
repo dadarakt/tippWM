@@ -110,7 +110,29 @@ object Player {
     SQL("select * from player").as(player *)
   }
 
-  def ranked: List[Player] = all.sortBy(_.points)
+  def ranked = all.sortBy(x => (x.points, x.hits, x.diffs, x.tendencies)).reverse
+
+  def rankedWithTies: List[(Player,Int)] = {
+    val sorted = ranked
+    var pos = 1
+    for{
+      (player, i) <- sorted.zipWithIndex
+    } yield {
+      // If there is still something to compare to
+      if(i+1 < sorted.length){
+        // Check for total tie
+        val r  = (player,pos)
+        if(sorted(i+1).points     != sorted(i).points ||
+           sorted(i+1).hits       != sorted(i).hits ||
+           sorted(i+1).diffs      != sorted(i).diffs ||
+           sorted(i+1).tendencies != sorted(i).tendencies){
+          pos += 1
+        }
+        r
+      }
+      else (player,pos)
+    }
+  }
 
 
   def create(id: Int, firstName: String, lastName: String, nickName: String, mail: String) {

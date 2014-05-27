@@ -33,7 +33,7 @@ object Application extends Controller {
   )
 
   def punkte = Action(
-    Ok(views.html.punkte(Player.all))
+    Ok(views.html.punkte(Player.rankedWithTies))
   )
 
 

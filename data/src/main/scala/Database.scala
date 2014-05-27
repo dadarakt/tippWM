@@ -54,6 +54,36 @@ object Database {
     println(s" Dropping all tables: ${"mysql" #< "src/main/resources/erase.sql" !}")
   }
 
+  def updateMatches: Unit = {
+    val connection = DriverManager.getConnection(url, user, pw)
+    val statement = connection.createStatement
+
+    for {
+      m <- Match.unfinishedMatches
+      id = m.onlineId
+    } {
+      val gameraw = Retrieval.getDataOnline(
+        <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+        <soap12:Body>
+          <GetMatchByMatchID xmlns="http://msiggi.de/Sportsdata/Webservices">
+            <MatchID>{id}</MatchID>
+          </GetMatchByMatchID>
+        </soap12:Body>
+      </soap12:Envelope>)
+
+      if(gameraw.getElementsByTag("matchisfinished").text.toBoolean) {
+        val scoreA = gameraw.getElementsByTag("pointsteam1").first.text.toInt
+        val scoreB = gameraw.getElementsByTag("pointsteam2").first.text.toInt
+        println(s"updating game ${gameraw.getElementsByTag("nameteam1")} vs ${gameraw.getElementById("nameteam2")} to" +
+          s"$scoreA : $scoreB")
+        statement.execute(s"UPDATE matches SET isfinished='1', scorea='$scoreA', scoreb='$scoreB' where onlineid='$id'")
+      }
+    }
+    val date = sqlDateformat.format(new java.util.Date())
+    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='match'")
+    connection.close
+  }
+
   def initializeMatches: Unit = {
 
     // There will be a set of groups from Vorrunde to Final
@@ -93,12 +123,9 @@ object Database {
       val team1 = game.getElementsByTag("nameteam1").text
       val team2 = game.getElementsByTag("nameteam2").text
       val groupName = {
-        val conn = DriverManager.getConnection(url, user, pw)
-        val statement = conn.createStatement()
         val result = statement.executeQuery(s"select groupchar from team where name='$team1'")
         result.next()
         val c = result.getString("groupchar")
-        conn.close
         c
       }
       val isFinished = game.getElementsByTag("matchisfinished").text.toBoolean
@@ -175,7 +202,7 @@ object Database {
         statement.execute(s"INSERT INTO team VALUES (DEFAULT, '$onlineId', '$name', '$group', DEFAULT, '$icon', DEFAULT, " +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added team $name, in group $group to the DB.")
-        conn.close()
+
 
       } catch {
         case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
@@ -246,5 +273,33 @@ object Database {
       responseLine <- rawData
       response = responseLine.split(',').toList if(!response.isEmpty && response(0) != "")
     } (parseSingleResponse(response))
+  }
+
+  def updatePlayers = {
+    // update the stats to the database
+    val connection = DriverManager.getConnection(url, user, pw)
+    val statement = connection.createStatement
+    for {
+      player <- Player.allPlayers
+      stats = player.results
+    } {
+      statement.execute(s"UPDATE player SET " +
+        s"scoredMatches='${stats.scoredMatches.pickle.value}'," +
+        s"falseMatches='${stats.falseTippMatches.pickle.value}'," +
+        s"missedMatches='${stats.missedMatches.pickle.value}'," +
+        s"points='${stats.points}'," +
+        s"pointstime='${stats.pointsTimeseries.pickle.value}'," +
+        s"tendencies='${stats.tendencies}'," +
+        s"tendenciestime='${stats.tendenciesTimeseries.pickle.value}'," +
+        s"diffs='${stats.diffs}'," +
+        s"diffstime='${stats.diffsTimeseries.pickle.value}'," +
+        s"hits='${stats.hits}'," +
+        s"hitstime='${stats.hitsTimeseries.pickle.value}' " +
+        s"WHERE email='${player.email}'")
+    }
+    val date = sqlDateformat.format(new java.util.Date())
+    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='player'")
+
+    connection.close()
   }
 }

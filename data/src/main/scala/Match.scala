@@ -45,6 +45,8 @@ object Match {
     }
     matches.sortBy(_.date)
   }
-  def playedMatches: List[Match]  = allMatches.filter(_.isFinished).sortBy(_.date)
-  def lastMatch                   = playedMatches.view.sortBy(_.date).last
+  def playedMatches: List[Match]      = allMatches.filter(_.isFinished).sortBy(_.date)
+  def unfinishedMatches: List[Match]  = allMatches.filter(!_.isFinished).sortBy(_.date)
+  def lastMatch                       = playedMatches.view.sortBy(_.date).last
+
 }

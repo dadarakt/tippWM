@@ -1,7 +1,16 @@
+/* Functions and basic colors */
 .bg-img(@img) { background-image:url("../images/@{img}"); }
 
+@color1: #555555;
+@color2: #C0BCB6;
+@color3: #FF717E;
+@color4: #97C30A;
+@color5: #1FBED6;
+
+
+
 h1 {
-    color:#FFFFFF;
+    color:@color3;
     font:bold 40px verdana, sans-serif;
     letter-spacing:1px;
     text-align:center;
@@ -34,25 +43,41 @@ ul {
 
 }
 
+table,th,td
+{
+    margin-left:20px;
+    border:1px solid @color2;
+    border-collapse:collapse;
+}
+
+th, td
+{
+padding:8px;
+}
+
+tr:nth-child(even) {
+    background-color: lighten(@color2,20%);
+}
+
 #menu {
     position:fixed;
     top:0px;
     right:0px;
-    background-color:rgba(85,85,85,0.6);
+    background-color:rgba(85,85,85,0.75);
     width:100%;
-    height:50px;
+    height:30px;
     margin-top:0px;
 }
 
 #header {
     font:bold 24px verdana, sans-serif;
-    height:40px;
+    height:30px;
     letter-spacing:1px;
     text-align:center;
     white-space:nowrap;
     clear:both;
     color:rgb(151, 195, 10);
-    background-color:rgba(85,85,85,0.9);
+    background-color:rgba(85,85,85,0.8);
     margin-top:0;
     margin-bottom:0;
 }
@@ -88,10 +113,10 @@ ul {
         margin-bottom:0;
 }
 
-.box {
+a.box {
     float:left;
     min-width:150px;
-    min-height:50px;
+    min-height:30px;
     margin-right:10px;
     margin-left:5px;
     text-decoration:none;
@@ -100,10 +125,88 @@ ul {
     text-align:center;
 }
 
-.box:hover {
+a.box:hover {
 
     -moz-box-shadow: 0 0 10px #ccc;
-        -webkit-box-shadow: 0 0 10px #ccc;
-        box-shadow: 0 0 10px #ccc;
+    -webkit-box-shadow: 0 0 10px #ccc;
+    box-shadow: 0 0 10px #ccc;
     background-color:rgba(85,85,85,0.5);
+}
+
+/* THE MENUS */
+
+/*Initialize*/
+ul#menu, ul#menu ul.sub-menu {
+    padding:0;
+    margin: 0;
+}
+ul#menu li, ul#menu ul.sub-menu li {
+    min-width:100px;
+    min-height:30px;
+    list-style-type: none;
+    display: inline-block;
+}
+
+/*Link Appearance*/
+ul#menu li a, ul#menu li  {
+    min-width:100px;
+    min-height:30px;
+    margin-right:10px;
+    margin-left:5px;
+    text-decoration:none;
+    color:rgb(31, 190, 214);
+    font:bold 20px verdana, sans-serif;
+    text-align:left;
+    display:inline-block;
+}
+
+/*Link Appearance*/
+ul#menu  a:hover  {
+    min-width:100px;
+    min-height:30px;
+    margin-right:10px;
+    margin-left:5px;
+    text-decoration:none;
+    color:#96E6F2;
+    font:bold 20px verdana, sans-serif;
+    text-align:left;
+    display:inline-block;
+    -webkit-box-shadow: 0 0 100px #000;
+    background-color: rgba(85,85,85,0.6);
+
+}
+
+ul.sub-menu li a {
+    min-width:100px;
+    min-height:30px;
+    margin-right:10px;
+    margin-left:5px;
+    text-decoration:none;
+    color:rgb(31, 190, 214);
+    font:bold 20px verdana, sans-serif;
+    text-align:left;
+    display:inline-block;
+
+}
+
+
+/*Make the parent of sub-menu relative*/
+ul#menu li {
+    position: relative;
+}
+
+/*sub menu*/
+ul#menu li ul.sub-menu {
+    display:none;
+    position: absolute;
+    top: 30px;
+    left: 0;
+    min-width: 100px;
+    background-color: rgba(85,85,85,0.7);
+}
+
+ul#menu li:hover ul.sub-menu {
+    min-width: 99px;
+    padding:0;
+    display:block;
 }

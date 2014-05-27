@@ -28,6 +28,15 @@ object Application extends Controller {
     Ok(views.html.spieler(Player.all))
   )
 
+  def anmeldung = Action(
+    Ok(views.html.anmeldung("Willkommen!"))
+  )
+
+  def punkte = Action(
+    Ok(views.html.punkte(Player.all))
+  )
+
+
 //  def newPlayer = Action { implicit request =>
 //    playerForm.bindFromRequest.fold(
 //      errors => BadRequest(views.html.spieler(Player.all, errors)),

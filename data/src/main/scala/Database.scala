@@ -19,6 +19,7 @@ object Database {
   val pw    = ""
 
   // for retrieving the data online
+//  val leagueShortcut = "WM-2014"
   val leagueShortcut = "test-wm"
   val leagueID = 676
   val season = 2014
@@ -27,12 +28,17 @@ object Database {
   val driver = "com.mysql.jdbc.Driver"
   Class.forName(driver).newInstance
 
+  // use date formats to parse from raw and then to save it to mysql
+  val rawDateformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  rawDateformat.setTimeZone(TimeZone.getTimeZone("utc"))
+  val sqlDateformat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+
   // Initializes the tables into the given database, can only be done online
   def main(args: Array[String]) = {
     // The database
-//    loadData
-    println(Player.allPlayers.mkString("\n\n"))
-    println(Match.allMatches.mkString("\n\n"))
+    loadData
+//    println(Player.allPlayers.mkString("\n\n"))
+//    println(Match.allMatches.mkString("\n\n"))
   }
 
   def loadData = {
@@ -77,10 +83,7 @@ object Database {
       </soap12:Envelope>
     ).getElementsByTag("matchdata")
 
-    // use date formats to parse from raw and then to save it to mysql
-    val rawDateformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-    rawDateformat.setTimeZone(TimeZone.getTimeZone("utc"))
-    val sqlDateformat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 
     // Get the games as the datastructure and return them
     val conn = DriverManager.getConnection(url, user, pw)
@@ -117,12 +120,14 @@ object Database {
         statement.execute(s"INSERT INTO matches VALUES " +
           s"(DEFAULT, '$team1', '$team2', '$groupName', '$date', '$location', '$stadium', '$onlineId', " +
           s"'$groupId', '$grouporderid', '$groupname', '${if(isFinished)1 else 0}', '$score1', '$score2')")
-        println(s"Added match $team1 vs. $team2, in group $groupname to the DB with result $team1:$team2")
+        println(s"Added match $team1 vs. $team2, in group $groupname to the DB with result ${score1}:${score2}")
       } catch {
         case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
           println(s"Match $team1 vs $team2 in group $groupname was already in the DB. Not creating entry!!!")
       }
     }
+    val date = sqlDateformat.format(new java.util.Date())
+    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='match'")
     conn.close
   }
 
@@ -152,6 +157,9 @@ object Database {
       else throw new RuntimeException("Error in the number of teams")
     }
 
+    val conn = DriverManager.getConnection(url, user, pw)
+    val statement = conn.createStatement
+
     // Get all teams
     for {
       (team, pos) <- teamsRaw.getElementsByTag("team").zipWithIndex
@@ -161,9 +169,9 @@ object Database {
       icon  = team.getElementsByTag("teamiconurl").text
     } {
       // And create the entry
+
       try {
-        val conn = DriverManager.getConnection(url, user, pw)
-        val statement = conn.createStatement
+
         statement.execute(s"INSERT INTO team VALUES (DEFAULT, '$onlineId', '$name', '$group', DEFAULT, '$icon', DEFAULT, " +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added team $name, in group $group to the DB.")
@@ -176,6 +184,9 @@ object Database {
           println(s"Could not add team $name in group $group. Not creating entry!!! $ex")
       }
     }
+    val date = sqlDateformat.format(new java.util.Date())
+    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='team'")
+    conn.close()
   }
 
   def initializePlayers = {
@@ -184,11 +195,14 @@ object Database {
     val header      = rawData.next
     val allMatches  = Match.allMatches
 
-    val conn = DriverManager.getConnection(url, user, pw)
-    val statement = conn.createStatement
+
 
     // parses a line from the file which represents a player
     def parseSingleResponse(response: List[String]): Unit = {
+
+      val conn = DriverManager.getConnection(url, user, pw)
+      val statement = conn.createStatement
+
       val firstName = response(1)
       val lastName  = response(2)
       val nickName  = response(3)
@@ -210,19 +224,22 @@ object Database {
           tipps(1))
       ).pickle.value
 
+
       // Save the player to the database
       try {
-        val conn = DriverManager.getConnection(url, user, pw)
-        val statement = conn.createStatement
         statement.execute(s"INSERT INTO player VALUES (DEFAULT, '$firstName', '$lastName', '$nickName', '$email', " +
-          s"'$first', '$second', '$third', '$tipps', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT," +
+          s"'$first', '$second', '$third', '$tipps'," +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added player $firstName, $lastName to the DB.")
       } catch {
         case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
           println(s"Player $firstName, $lastName was already in the DB. Not creating entry!!!")
       }
+      val date = sqlDateformat.format(new java.util.Date())
+      statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='player'")
+      conn.close()
     }
+
 
     // Iterate over all entries coming from the google-form
     for{

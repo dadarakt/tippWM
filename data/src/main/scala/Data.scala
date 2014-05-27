@@ -9,13 +9,6 @@ import json._
  */
 
 object Data {
-  def main(args: Array[String]) = {
-    val start = System.currentTimeMillis()
-    Group.getGroup('a')
-    println(s"${System.currentTimeMillis - start} ms")
-  }
-    val driver = "com.mysql.jdbc.Driver"
-  Class.forName(driver).newInstance
 
 }
 

@@ -11,20 +11,39 @@
     </head>
 
     <body>
-        <div id="menu">
-            <div class="box"> <a href="/" style="text-decoration:none;color:rgb(31, 190, 214);font:bold 20px verdana, sans-serif;">Home</a></div>
-            <div class="box"><a style="text-decoration:none;color:rgb(31, 190, 214);font:bold 20px verdana, sans-serif;" href="/spieler" >Spieler</a></div>
-            <div class="box"><a style="text-decoration:none;color:rgb(31, 190, 214);font:bold 20px verdana, sans-serif;" href="/test">Ergebnisse</a></div>
+        <div id="menubar">
+            <ul id="menu" style="float:left">
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li><a href="/spieler">Spieler</a>
+                    <ul class="sub-menu">
+                        <li>
+                            <a href="/spieler">Teilnehmer</a>
+                        </li>
+                        <li>
+                            <a href="/punkte">Punkte</a>
+                        </li>
+                        <li>
+                            <a href="/anmeldung">Anmeldung</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Ergebnisse</a>
+                </li>
+            <ul>
+
         </div>
 
         <div id="container" style="border:1px solid #ccc;clear:both;margin-top:50px;top:0;width:100%;height:100%">
             <div id="header">
-                Tipp WM --- @title
+                Tipp WM - @title
             </div>
 
 
             <div id="content" >
-                <div id="text" style="margin-left:10px;margin-right10px;width:680px;height:2500px">
+                <div id="text" style="margin-left:10px;margin-right10px;min-height:2000px">
                     @content
                 </div>
             </div>

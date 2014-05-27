@@ -1,0 +1,32 @@
+@(players: List[Player])
+
+@main("Punkte") {
+<h3>Punktestand - Übersicht </h3>
+<h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @Player.lastUpdate</h2>
+
+@helper.form(action = routes.Application.index) {
+
+}
+
+
+<table>
+    <tr>
+        <th>Platz</th>
+        <th>Name</th>
+        <th>Punkte</th>
+    </tr>
+    @players.sortBy(_.points).reverse.zipWithIndex.map { case (player, pos)=>
+    <tr>
+        <td>@{pos+1}</td>
+        <td>@player.nameString</td>
+        <td>@player.points</td>
+
+    </tr>
+    }
+</table><br><br>
+
+<hr>
+
+<h3>Neu hier? Trag dich ein:</h3>
+<a href="https://docs.google.com/forms/d/1es-i1gmxV3mmPajMNDHVLPx30KJkpBAhsoNj1FzWa_s/viewform?usp=send_form" target="_blank">Anmeldeformular</a>
+}

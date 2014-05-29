@@ -1,9 +1,48 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title></title>
-</head>
-<body>
+@main("Spieler-Statistik") {
 
-</body>
-</html>
+    <h1>Wer spielt wann und gegen wen?</h1>
+
+    <h3>Gespielte Spiele</h3>
+    <table>
+        <tr>
+            <th>Spiel</th>
+            <th>Runde</th>
+            <th>Datum</th>
+            <th>Ort</th>
+            <th>Ergebnis</th>
+        </tr>
+        <tr>
+        @models.Match.all.filter(_.isFinished).map { m =>
+            <tr>
+            <td>@m.vsString</td>
+            <td>@m.group</td>
+            <td>@m.dateString</td>
+            <td>@m.location</td>
+            <td>@m.resultString</td>
+            </tr>
+        }
+        </tr>
+    </table>
+
+    <h3>Ausstehende Spiele</h3>
+    <table>
+        <tr>
+            <th>Spiel</th>
+            <th>Runde</th>
+            <th>Datum</th>
+            <th>Ort</th>
+            <th>Ergebnis</th>
+        </tr>
+        <tr>
+        @models.Match.all.filter(! _.isFinished).map { m =>
+        <tr>
+            <td>@m.vsString</td>
+            <td>@m.group</td>
+            <td>@m.dateString</td>
+            <td>@m.location</td>
+            <td>@m.resultString</td>
+        </tr>
+        }
+    </table>
+
+}

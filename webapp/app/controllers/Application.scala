@@ -45,6 +45,10 @@ object Application extends Controller {
     Ok(views.html.punkte(Player.rankedWithTies))
   )
 
+  def begegnungen = Action(
+    Ok(views.html.begegnungen())
+  )
+
 
 //  def newPlayer = Action { implicit request =>
 //    playerForm.bindFromRequest.fold(

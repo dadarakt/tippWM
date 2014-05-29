@@ -11,15 +11,47 @@ import play.api.db._
 import play.api.Play.current
 import java.util.Date
 import java.text.SimpleDateFormat
+import scala.Some
+import scala.pickling._
+import json._
 
-case class Player(firstName: String,
+case class Tipp( matchOnlineId: Int,
+                 playerId: Int,
+                 scoreA: Int,
+                 scoreB: Int) {
+
+  def tippString = s"$scoreA : $scoreB"
+
+  def resultString = {
+    val m = Match.all.filter(_.onlineId == matchOnlineId).headOption.getOrElse(Match.dummy)
+
+    if (m.isFinished) {
+      val diffMatch  = (m.scoreA - m.scoreB)
+      val diffTipp   = (scoreA - scoreB)
+
+      if (m.scoreA == scoreA && m.scoreB == scoreB){
+        4
+      } else if (diffMatch != 0 && diffMatch == diffTipp) {
+        3
+      } else if (diffMatch > 0 && diffTipp >0 || diffMatch < 0 && diffTipp < 0 || diffMatch == 0 && diffTipp == 0){
+        2
+      } else {
+        0
+      }
+    } else "--"
+  }
+}
+
+
+case class Player(id: Int,
+                  firstName: String,
                   lastName: String,
                   nickName: String,
                   email: String,
                   guessFirst: String,
                   guessSecond: String,
                   guessThird: String,
-                  tipps1: String,
+                  tipps1: List[Tipp],
                   scoredMatches: String,
                   falseMatches: String,
                   missedMatches: String,
@@ -32,6 +64,7 @@ case class Player(firstName: String,
                   hits: Int,
                   hitsTime: String
                   ){
+
 
   def nameString = {
     val nicky = if(nickName.length > 0) s"\'$nickName\'" else ""
@@ -46,6 +79,7 @@ case class Player(firstName: String,
 }
 
 object Player {
+  def tippy = new Tipp(0,0,0,0)
 
   val date = {
     get[Option[Date]]("lastupdate") map {
@@ -65,6 +99,7 @@ object Player {
 
   // parser to read a player from the DB
   val player = {
+    get[Int]("id")~
     get[String]("firstName")~
     get[String]("lastName")~
     get[String]("nickName")~
@@ -77,38 +112,56 @@ object Player {
     get[Option[String]]("falseMatches")~
     get[Option[String]]("missedMatches")~
     get[Int]("points")~
-      get[Option[String]]("pointstime")~
+    get[Option[String]]("pointstime")~
     get[Int]("tendencies")~
-      get[Option[String]]("tendenciestime")~
+    get[Option[String]]("tendenciestime")~
     get[Int]("diffs")~
-      get[Option[String]]("diffstime")~
+    get[Option[String]]("diffstime")~
     get[Int]("hits")~
-      get[Option[String]]("hitstime") map {
-      case  firstName~lastName~nickName~email~
+    get[Option[String]]("hitstime") map {
+      case  id~firstName~lastName~nickName~email~
             guessfirst~guesssecond~guessthird~tipps1~
             scoredMatches~falseMatches~missedMatches~
-            points~pointstime~tendencies~tendenciestime~diffs~diffstime~hits~hitstime =>
-        Player( firstName, lastName, nickName, email,
-                guessfirst, guesssecond, guessthird, tipps1,
-                scoredMatches.getOrElse(""),falseMatches.getOrElse(""),missedMatches.getOrElse(""),
-                points,pointstime.getOrElse(""),tendencies,tendenciestime.getOrElse(""),diffs,diffstime.getOrElse(""),hits,hitstime.getOrElse(""))
-    }
+            points~pointstime~tendencies~tendenciestime~diffs~diffstime~hits~hitstime => {
+
+      val tipplist = tipps1.replaceAll("Tipp", "models.Tipp").unpickle[List[Tipp]]
+
+        Player(id, firstName, lastName, nickName, email,
+          guessfirst, guesssecond, guessthird, tipplist,
+          scoredMatches.getOrElse(""),falseMatches.getOrElse(""),missedMatches.getOrElse(""),
+          points,pointstime.getOrElse(""),tendencies,tendenciestime.getOrElse(""),diffs,diffstime.getOrElse(""),hits,hitstime.getOrElse(""))
+      }
+     }
   }
 
   val simplePlayer = {
+    get[Int]("id")~
     get[String]("firstName")~
     get[String]("lastName")~
     get[String]("nickName")~
     get[String]("email") map {
-      case firstName~lastName~nickName~email =>
-        new Player(firstName, lastName, nickName, email, "", "","","","","","",0,"",0,"",0,"",0,"")
+      case id~firstName~lastName~nickName~email =>
+        new Player(id,firstName, lastName, nickName, email, "", "","",List(),"","","",0,"",0,"",0,"",0,"")
     }
   }
 
 
-  def all: List[Player] = DB.withConnection { implicit conn =>
-    SQL("select * from player").as(player *)
-  }
+  def all: List[Player] =
+    DB.withConnection { implicit conn =>
+      SQL("select * from player").as(player *)
+    }
+
+
+
+  def getPlayer(id: Int) =
+    try {
+      DB.withConnection { implicit conn =>
+        SQL(s"select * from player where id='${id}'").as(player *).head
+      }
+    }catch {
+      case ex: NoSuchElementException => null
+    }
+
 
   def ranked = all.sortBy(x => (x.points, x.hits, x.diffs, x.tendencies)).reverse
 

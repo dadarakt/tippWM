@@ -1,12 +1,18 @@
 @(message: String)
 
 @main("Home") {
-    <h1>Mach mit!</h1>
-      <hr>
-    <div style="float:left;width:50%;text-align:center">
+    <h1>@message</h1>
+
+    <div style="float:left;width:50%;text-align:right">
+
         Die Eichborn Tipp-WM kann beginnen! Schau dich oben im Menu um, wer schon mitmacht und trag dich selbst ein.
         Es winken ewiger Ruhm und sogar ein Preis (wahrscheinlich). Ausserdem erwarten dich Spiel, Spaß und Spannung.
         Herzlich Willkommen!
     </div>
-    <div style="float:right;width:300px"><img src="@routes.Assets.at("images/great_owl.png")" width="100%"/></div>
+    <div style="float:right;width:300px"><img src="@routes.Assets.at("images/great_owl.png")" width="75%"/></div>
+    <hr style="clear:both">
+    <h3>Zuletzt gespielte Spiele: </h3>
+    @models.Match.lastMatches(4).map { game =>
+        @game.vsString<br>
+    }
 }

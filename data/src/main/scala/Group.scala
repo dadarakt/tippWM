@@ -64,13 +64,21 @@ object Group {
 
       var teams = Set[Team]()
       val resultTeam = statement.executeQuery(s"select * from team where groupchar='$name'")
-      while (resultTeam.next()) {
-        val team = new Team(resultTeam.getString("name"),
-          resultTeam.getInt("id"),
-          name,
-          resultTeam.getString("iconurl"))
-        teams += team
-        println(team)
+      while (resultTeam.next) {
+
+        val t = new Team(resultTeam.getInt("onlineid"),
+          resultTeam.getString("name"),
+          resultTeam.getString("groupchar")(0),
+          resultTeam.getInt("round"),
+          resultTeam.getString("iconurl"),
+          resultTeam.getInt("gamesplayed"),
+          resultTeam.getInt("wins"),
+          resultTeam.getInt("losses"),
+          resultTeam.getInt("draws"),
+          resultTeam.getInt("goalsscored"),
+          resultTeam.getInt("goalsgotten"),
+          resultTeam.getInt("points"))
+        teams += t
       }
 
       var matches = List[Match]()

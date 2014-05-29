@@ -18,7 +18,7 @@ object Main {
     implicit val executor = actorSystem.dispatcher
 
     // Load data, if there is something new
-    Database.loadData
+   Database.initializePlayers
 
     // The task which is performed to generate the data
     val task = new Runnable {
@@ -31,12 +31,13 @@ object Main {
     }
     scheduler.schedule(
       initialDelay = Duration(1, TimeUnit.SECONDS),
-      interval = Duration(10, TimeUnit.SECONDS),
+      interval = Duration(60, TimeUnit.MINUTES),
       runnable = task)
   }
 
   def updateData = {
     Database.updateMatches
     Database.updatePlayers
+    //TODO Database.updateTeams
   }
 }

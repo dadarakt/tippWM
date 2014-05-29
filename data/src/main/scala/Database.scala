@@ -2,7 +2,6 @@ import java.text.SimpleDateFormat
 import java.util.TimeZone
 import java.sql.DriverManager
 import scala.collection.JavaConversions._
-import scala.xml.MalformedAttributeException
 import scala.pickling._
 import json._
 
@@ -59,9 +58,11 @@ object Database {
     val statement = connection.createStatement
 
     for {
-      m <- Match.unfinishedMatches
+      m <- Match.unfinishedMatches if(m.date.before(new java.util.Date))
       id = m.onlineId
     } {
+
+      println(s"Looking if match ${m.teamA} vs. ${m.teamB} is finished.")
       val gameraw = Retrieval.getDataOnline(
         <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
         <soap12:Body>
@@ -72,9 +73,13 @@ object Database {
       </soap12:Envelope>)
 
       if(gameraw.getElementsByTag("matchisfinished").text.toBoolean) {
+        println(s"Match ${m.teamA} vs. ${m.teamB} is finished! Updating...")
+
         val scoreA = gameraw.getElementsByTag("pointsteam1").first.text.toInt
         val scoreB = gameraw.getElementsByTag("pointsteam2").first.text.toInt
-        println(s"updating game ${gameraw.getElementsByTag("nameteam1")} vs ${gameraw.getElementById("nameteam2")} to" +
+
+
+        println(s"updating game ${gameraw.getElementsByTag("nameteam1").text} vs ${gameraw.getElementsByTag("nameteam2").text} to" +
           s"$scoreA : $scoreB")
         statement.execute(s"UPDATE matches SET isfinished='1', scorea='$scoreA', scoreb='$scoreB' where onlineid='$id'")
       }
@@ -112,7 +117,6 @@ object Database {
         </soap12:Body>
       </soap12:Envelope>
     ).getElementsByTag("matchdata")
-
 
 
     // Get the games as the datastructure and return them
@@ -219,7 +223,8 @@ object Database {
   def initializePlayers = {
     val filename    = "src/main/resources/responses.csv"
     val rawData     = scala.io.Source.fromFile(filename).getLines
-    val header      = rawData.next
+    val header      = rawData.next.split(',').toList
+
     val allMatches  = Match.allMatches
 
 
@@ -240,28 +245,43 @@ object Database {
       val second  = response(response.length - 2)
       val third   = response(response.length - 1)
 
-      // Get all the tipps and save them with their game's online ID (serizalized)
-      val tipps = (for{
-        (tipp , index) <- response.drop(5).take(48).zipWithIndex
-        tipps = tipp.split(':').toList.map(_.toInt)
-      } yield new Tipp(
-          allMatches(index).onlineId,
-          firstName + lastName + nickName,
-          tipps(0),
-          tipps(1))
-      ).pickle.value
-
-
-      // Save the player to the database
+      // Write the player to the database
       try {
+        // Write that out to get the id for the player to sign the tipps
+
         statement.execute(s"INSERT INTO player VALUES (DEFAULT, '$firstName', '$lastName', '$nickName', '$email', " +
-          s"'$first', '$second', '$third', '$tipps'," +
+          s"'$first', '$second', '$third', DEFAULT," +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added player $firstName, $lastName to the DB.")
+
+        val dbId = statement.executeQuery(s"select id from player where email='$email'")
+        dbId.next
+        val iid =  dbId.getInt("id")
+        // Get all the tipps and save them with their game's online ID (serizalized)
+        val tipps = (for{
+          (tipp , index) <- response.drop(5).take(48).zipWithIndex
+          tipps = tipp.split(':').toList.map(_.toInt)
+          teams = header(index+5).split('-').map(_.trim)
+        } yield {
+          assert(teams(0) == allMatches(index).teamA && teams(1) == allMatches(index).teamB)
+          new Tipp(
+            allMatches(index).onlineId,
+            iid,
+            tipps(0),
+            tipps(1))
+        }).pickle.value
+
+
+        statement.execute(s"UPDATE player SET tipps1='${tipps}'WHERE email='${email}'")
       } catch {
         case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
           println(s"Player $firstName, $lastName was already in the DB. Not creating entry!!!")
       }
+
+
+
+      // Save the player to the database
+
       val date = sqlDateformat.format(new java.util.Date())
       statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='player'")
       conn.close()

@@ -4,6 +4,8 @@ import java.sql.DriverManager
  * Created by Jannis on 5/26/14.
  */
 
+
+
 case class Match( onlineId : Int,
                   teamA: String,
                   teamB: String,
@@ -22,17 +24,24 @@ case class Match( onlineId : Int,
 }
 
 object Match {
+
+  def main(args: Array[String]) = {
+    allMatches.foreach(m => println(s"${m.teamA} vs. ${m.teamB} (${m.date.getTime})"))
+  }
+
+
+
   def allMatches:    List[Match] = {
     val connection = DriverManager.getConnection(Database.url, Database.user, Database.pw)
     val statement = connection.createStatement
     var matches = List[Match]()
     val resultMatch = statement.executeQuery(s"select * from matches")
-    while(resultMatch.next()) {
+    while(resultMatch.next) {
       val m = new Match(resultMatch.getInt("onlineid"),
         resultMatch.getString("teama"),
         resultMatch.getString("teamb"),
         resultMatch.getString("groupchar")(0),
-        resultMatch.getDate("date"),
+        Database.sqlDateformat.parse(resultMatch.getString("date")),
         resultMatch.getString("location"),
         resultMatch.getString("stadium"),
         resultMatch.getInt("groupid"),
@@ -43,7 +52,7 @@ object Match {
         resultMatch.getInt("scoreb"))
       matches ::= m
     }
-    matches.sortBy(_.date)
+    matches.sortBy(m=> (m.group, m.date.getTime))
   }
   def playedMatches: List[Match]      = allMatches.filter(_.isFinished).sortBy(_.date)
   def unfinishedMatches: List[Match]  = allMatches.filter(!_.isFinished).sortBy(_.date)

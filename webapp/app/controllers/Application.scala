@@ -1,9 +1,7 @@
 package controllers
 
-import play.api.data._
-import play.api.data.Forms._
 import play.api.mvc._
-import models.Player
+import models.{Player}
 
 object Application extends Controller {
 
@@ -28,6 +26,17 @@ object Application extends Controller {
     Ok(views.html.spieler(Player.all))
   )
 
+  def playerPage(id: String) = Action {
+    val iid = try {
+      id.toInt
+    } catch {
+      case ex: NumberFormatException => 0
+    }
+    val player = Player.getPlayer(iid)
+
+    Ok(views.html.playerPage(player))
+  }
+
   def anmeldung = Action(
     Ok(views.html.anmeldung("Willkommen!"))
   )
@@ -47,9 +56,9 @@ object Application extends Controller {
 //    )
 //  }
 
-  def deletePlayer(id: Int) = Action {
-    Player.delete(id)
-    Redirect(routes.Application.players)
-  }
+//  def deletePlayer(id: Int) = Action {
+//    Player.delete(id)
+//    Redirect(routes.Application.players)
+//  }
 
 }

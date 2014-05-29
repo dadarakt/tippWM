@@ -1,7 +1,9 @@
 @(players: List[Player])
 
 @main("Teilnehmer") {
+    <h1>Wer macht mit?</h1>
     <h3>Bisher sind @players.size Spieler dabei: </h3>
+        Klicke auf die Namen um, Details zu den Spielern zu sehen.
     <h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @Player.lastUpdate</h2>
     <table>
         <tr>
@@ -11,9 +13,9 @@
         </tr>
         @players.sortBy(_.firstName.toLowerCase).map { player=>
         <tr>
-            <td>@player.firstName</td>
-            <td>@player.nicky</td>
-            <td>@player.lastName</td>
+            <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.firstName</a></td>
+            <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.nicky</a></td>
+            <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.lastName</a></td>
         </tr>
         }
     </table><br><br>

@@ -1,8 +1,9 @@
 @(players: List[(Player,Int)])
 
 @main("Punkte") {
+<h1>Wer führt?</h1>
 <h3>Punktestand - Übersicht </h3>
-<h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @Player.lastUpdate</h2>
+<h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @models.Player.lastUpdate</h2>
 
 <table>
     <tr>
@@ -13,9 +14,9 @@
 
     @players.map {case (player, pos) =>
         <tr>
-            <td>@{pos}</td>
-            <td><a href="#" style=";text-decoration:none;">@player.nameString</a></td>
-            <td>@player.points</td>
+            <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@{pos}</a></td>
+            <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.nameString</a></td>
+            <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.points</a>   </td>
         </tr>
 
     }

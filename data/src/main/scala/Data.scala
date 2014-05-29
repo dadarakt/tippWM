@@ -9,7 +9,9 @@ import json._
  */
 
 object Data {
-
+  def main(args: Array[String]) = {
+    println(Player.allPlayers.map(_.tipps))
+  }
 }
 
 case class Player(firstName: String,
@@ -81,8 +83,11 @@ case class Stats( playerId:             String,
 }
 
 
-case class Tipp(matchOnlineId: Int, playerId: String, scoreA: Int, scoreB: Int)
 
+case class Tipp( matchOnlineId: Int,
+                 playerId: Int,
+                 scoreA: Int,
+                 scoreB: Int)
 object Tipp{
 
   //returns a time-series of points

@@ -1,5 +1,5 @@
 import java.sql.DriverManager
-
+import models.Database._
 /**
  * Created by Jannis on 5/26/14.
  */
@@ -20,13 +20,14 @@ case class Team( onlineId: Int,
   override def toString = s"($name, $group)"
 }
 
+// TODO retrieval could be done nicer using anorm
 object Team {
   def main(args: Array[String]) = {
     println(allGroups)
   }
   def allTeams: List[Team] = {
 
-    val connection = DriverManager.getConnection(Database.url, Database.user, Database.pw)
+    val connection = DriverManager.getConnection(url, user, pw)
     val statement = connection.createStatement
 
     var teams = List[Team]()
@@ -46,7 +47,7 @@ object Team {
         resultTeam.getInt("points"))
       teams ::= t
     }
-   teams.sortBy(m=> (m.group))
+    teams.sortBy(m=> (m.group))
   }
 
   // Returns grouped teams, ranked

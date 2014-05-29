@@ -6,7 +6,8 @@ libraryDependencies ++= Seq(
   jdbc,
   anorm,
   cache,
-  "mysql" % "mysql-connector-java" % "5.1.17"
+  "mysql" % "mysql-connector-java" % "5.1.17",
+  "org.scala-lang" %% "scala-pickling" % "0.8.0"
 )
 
 

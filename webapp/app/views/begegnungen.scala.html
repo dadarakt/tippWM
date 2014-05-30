@@ -1,30 +1,12 @@
-@main("Spieler-Statistik") {
+@main("Spiele der WM") {
 
-    <h1>Wer spielt wann und gegen wen?</h1>
-
-    <h3>Gespielte Spiele</h3>
-    <table>
-        <tr>
-            <th>Spiel</th>
-            <th>Runde</th>
-            <th>Datum</th>
-            <th>Ort</th>
-            <th>Ergebnis</th>
-        </tr>
-        <tr>
-        @models.Match.all.filter(_.isFinished).map { m =>
-            <tr>
-            <td>@m.vsString</td>
-            <td>@m.group</td>
-            <td>@m.dateString</td>
-            <td>@m.location</td>
-            <td>@m.resultString</td>
-            </tr>
-        }
-        </tr>
-    </table>
+    <h1>Wer spielt noch gegen wen?</h1>
 
     <h3>Ausstehende Spiele</h3>
+Klicke auf die Spiele um die Tipps zu sehen.
+<br><br>
+<h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @models.Match.lastUpdate</h2>
+
     <table>
         <tr>
             <th>Spiel</th>
@@ -34,15 +16,14 @@
             <th>Ergebnis</th>
         </tr>
         <tr>
-        @models.Match.all.filter(! _.isFinished).map { m =>
+            @models.Match.all.filter(! _.isFinished).map { m =>
         <tr>
-            <td>@m.vsString</td>
-            <td>@m.group</td>
-            <td>@m.dateString</td>
-            <td>@m.location</td>
-            <td>@m.resultString</td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.vsString</a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.group</a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.dateString</a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.location</a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.resultString</a></td>
         </tr>
         }
     </table>
-
 }

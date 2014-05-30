@@ -9,7 +9,7 @@ import scala.Some
 import play.api.db._
 import play.api.Play.current
 
-case class Match( onlineId : Int,
+case class  Match( onlineId : Int,
                   teamA: String,
                   teamB: String,
                   group: Char,
@@ -34,7 +34,9 @@ case class Match( onlineId : Int,
 
 object Match {
 
-
+  def lastUpdate = DB.withConnection { implicit conn =>
+    SQL("select lastupdate from lastupdate where id='match'").as(Player.date *).head
+  }
 
   val matchParser = {
       get[String]("teama")~

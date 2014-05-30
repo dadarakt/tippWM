@@ -49,6 +49,7 @@ object Team {
    teams.sortBy(m=> (m.group))
   }
 
+
   // Returns grouped teams, ranked
   def allGroups: List[(Char, List[Team])] = {
     val groupMap = allTeams.groupBy(_.group)

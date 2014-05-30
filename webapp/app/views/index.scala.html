@@ -2,17 +2,42 @@
 
 @main("Home") {
     <h1>@message</h1>
+    <div class="container" style="width:100%;float:left">
+        <div style="width:80%;padding:10px;height:100px;text-align:center;float:top">
 
-    <div style="float:left;width:50%;text-align:right">
+            Die Eichborn Tipp-WM kann beginnen! Schau dich oben im Menu um, wer schon mitmacht und trag dich selbst ein.
+            Es winken ewiger Ruhm und sogar ein Preis (wahrscheinlich). Ausserdem erwarten dich Spiel, Spaß und Spannung.
+            Herzlich Willkommen!
+        </div>
+        <div style="width:400px;padding:10px;height:250px;float:left">
+            <h3>Die besten Drei: </h3>
+            <table >
+                @Player.ranked.take(3).zipWithIndex.map {case (player, pos) =>
 
-        Die Eichborn Tipp-WM kann beginnen! Schau dich oben im Menu um, wer schon mitmacht und trag dich selbst ein.
-        Es winken ewiger Ruhm und sogar ein Preis (wahrscheinlich). Ausserdem erwarten dich Spiel, Spaß und Spannung.
-        Herzlich Willkommen!
+                <tr>
+                    <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@{pos+1}</a></td>
+                    <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.nameString</a></td>
+                    <td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.points</a>   </td>
+                </tr>
+                }
+            </table>
+        </div>
+        <div  style="width:400px;padding:10px;height:250px;float:left">
+            <table>
+                <h3>Zuletzt gespielte Spiele: </h3>
+                @models.Match.lastMatches(5).map { m =>
+                <tr>
+                    <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.vsString</a></td>
+                    <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.resultString</a></td>
+                </tr>
+                }
+            </table>
+
+        </div>
     </div>
-    <div style="float:right;width:300px"><img src="@routes.Assets.at("images/great_owl.png")" width="75%"/></div>
+
+    <div style="clear:both;float:right;width:400px;padding:10px"><img src="@routes.Assets.at("images/great_owl.png")" width="75%"/></div>
+
     <hr style="clear:both">
-    <h3>Zuletzt gespielte Spiele: </h3>
-    @models.Match.lastMatches(4).map { game =>
-        @game.vsString<br>
-    }
+
 }

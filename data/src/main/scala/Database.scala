@@ -4,6 +4,7 @@ import java.sql.DriverManager
 import scala.collection.JavaConversions._
 import scala.pickling._
 import json._
+import scala.util.control.NonFatal
 
 /**
  * Created by Jannis on 5/23/14.
@@ -220,6 +221,69 @@ object Database {
     conn.close()
   }
 
+  def updateTeams = {
+    val connection = DriverManager.getConnection(url, user, pw)
+    val statement = connection.createStatement
+
+    var teamMap: Map[String, (Int,Int,Int,Int,Int,Int)] = Map()
+    for{
+      team <- Team.allTeams
+    } teamMap += (team.name -> (0,0,0,0,0,0))
+
+    // Crunch all matches to see how the teams scored
+    for{
+      m <- Match.playedMatches.filter(_.groupOrderId == 1)
+      teamA  = m.teamA
+      teamB  = m.teamB
+      scoreA = m.scoreA
+      scoreB = m.scoreB
+      diff = scoreA-scoreB
+    } {
+     //#played, wins, losses, draw, goalsscored, goalsgotten
+      val beforeA = teamMap(teamA)
+      val afterA  = ( beforeA._1 + 1,
+                      beforeA._2 + (if(diff > 0) 1 else 0),
+                      beforeA._3 + (if(diff < 0) 1 else 0),
+                      beforeA._4 + (if(diff == 0) 1 else 0),
+                      beforeA._5 + scoreA,
+                      beforeA._6 + scoreB)
+
+      val beforeB = teamMap(teamB)
+      val afterB  = ( beforeB._1 + 1,
+                      beforeB._2 + (if(diff < 0) 1 else 0),
+                      beforeB._3 + (if(diff > 0) 1 else 0),
+                      beforeB._4 + (if(diff == 0) 1 else 0),
+                      beforeB._5 + scoreB,
+                      beforeB._6 + scoreA)
+
+      teamMap += (teamA -> afterA)
+      teamMap += (teamB -> afterB)
+    }
+
+
+    for {
+      (team, stats) <- teamMap
+    } {
+      statement.execute(s"UPDATE team SET " +
+        s"gamesplayed='${stats._1}'," +
+        s"wins='${stats._2}', " +
+        s"losses='${stats._3}', " +
+        s"draws='${stats._4}', " +
+        s"goalsscored='${stats._5}', " +
+        s"goalsgotten='${stats._6}'," +
+        s"points='${(stats._2*3 + stats._4)}'" +
+        s"WHERE name='${team}'"
+      )
+    }
+    val date = sqlDateformat.format(new java.util.Date())
+    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='team'")
+
+    connection.close()
+  }
+
+
+
+
   def initializePlayers = {
     val filename    = "src/main/resources/responses.csv"
     val rawData     = scala.io.Source.fromFile(filename).getLines
@@ -245,15 +309,20 @@ object Database {
       val second  = response(response.length - 2)
       val third   = response(response.length - 1)
 
-      // Write the player to the database
+      // Write the player to the database - if he is not yet in there
       try {
         // Write that out to get the id for the player to sign the tipps
-
         statement.execute(s"INSERT INTO player VALUES (DEFAULT, '$firstName', '$lastName', '$nickName', '$email', " +
           s"'$first', '$second', '$third', DEFAULT," +
           s"DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT)")
         println(s"Added player $firstName, $lastName to the DB.")
+      } catch {
+        case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
+          println(s"Player $firstName, $lastName was already in the DB. Not creating entry!!!")
+      }
 
+      // Update the tipps to the current state from the tabular
+      try{
         val dbId = statement.executeQuery(s"select id from player where email='$email'")
         dbId.next
         val iid =  dbId.getInt("id")
@@ -270,18 +339,14 @@ object Database {
             tipps(0),
             tipps(1))
         }).pickle.value
-
-
         statement.execute(s"UPDATE player SET tipps1='${tipps}'WHERE email='${email}'")
       } catch {
-        case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
-          println(s"Player $firstName, $lastName was already in the DB. Not creating entry!!!")
+        case NonFatal(ex) => {
+          println(s"Updating tipps for player $firstName $lastName failed due to $ex")
+        }
       }
 
-
-
-      // Save the player to the database
-
+      // Update the last edit
       val date = sqlDateformat.format(new java.util.Date())
       statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='player'")
       conn.close()

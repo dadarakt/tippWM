@@ -1,0 +1,46 @@
+@main("Gruppenüberblick") {
+
+    <h1>Wer kommt weiter?</h1>
+
+
+    Klicke auf die Teams um die Spiele zu sehen.
+    <br><br>
+    <h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @models.Match.lastUpdate</h2>
+
+    @models.Team.allGroups.map { case (name, teams) =>
+    <h3>Gruppe @name</h3>
+        <table>
+            <tr>
+                <th style="width:200px">Team</th>
+                <th>Gespielte<br>Spiele</th>
+                <th>Tore<br>Geschossen</th>
+                <th>Tore<br>Kassiert</th>
+                <th>Differenz</th>
+                <th>Punkte</th>
+            </tr>
+            @teams.take(2).map {team =>
+            <tr style="color: green">
+                <td >@team.name</td>
+                <td>@team.matchesPlayed</td>
+                <td>@team.goalsscored</td>
+                <td>@team.goalsgotten</td>
+                <td>@(team.goalsscored - team.goalsgotten)</td>
+                <td>@team.points</td>
+            </tr>
+            }
+            @teams.drop(2).take(2).map {team =>
+            <tr style="color: #333">
+                <td>@team.name</td>
+                <td>@team.matchesPlayed</td>
+                <td>@team.goalsscored</td>
+                <td>@team.goalsgotten</td>
+                <td>@(team.goalsscored - team.goalsgotten)</td>
+                <td>@team.points</td>
+            </tr>
+            }
+        </table>
+
+    }
+
+
+}

@@ -30,16 +30,18 @@ case class Tipp( matchOnlineId: Int,
       val diffTipp   = (scoreA - scoreB)
 
       if (m.scoreA == scoreA && m.scoreB == scoreB){
-        4
+        4.toString
       } else if (diffMatch != 0 && diffMatch == diffTipp) {
-        3
+        3.toString
       } else if (diffMatch > 0 && diffTipp >0 || diffMatch < 0 && diffTipp < 0 || diffMatch == 0 && diffTipp == 0){
-        2
+        2.toString
       } else {
-        0
+        0.toString
       }
     } else "--"
   }
+
+
 }
 
 
@@ -76,6 +78,17 @@ case class Player(id: Int,
   }
 
   def nicky = if(nickName.length > 0) s"\'$nickName\'" else ""
+
+  def getTipp(matchId: Int) = {
+    val tipp = tipps1.find(_.matchOnlineId == matchId).getOrElse(Tipp(0,0,0,0))
+    tipp.tippString
+  }
+
+  def getTippPoints(matchId: Int) = {
+    val tipp = tipps1.find(_.matchOnlineId == matchId).getOrElse(Tipp(0,0,0,0))
+    tipp.resultString
+  }
+
 }
 
 object Player {

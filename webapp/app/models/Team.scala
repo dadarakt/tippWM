@@ -1,5 +1,13 @@
+package models
+
 import java.sql.DriverManager
 import models.Database._
+import anorm._
+import anorm.SqlParser._
+import play.api.db.DB
+import play.api.Play.current
+
+
 /**
  * Created by Jannis on 5/26/14.
  */
@@ -9,7 +17,7 @@ case class Team( onlineId: Int,
                  group: Char,
                  round: Int,
                  iconUrl: String,
-                 gamesplayed: Int,
+                 matchesPlayed: Int,
                  wins: Int,
                  losses: Int,
                  draws: Int,
@@ -22,37 +30,34 @@ case class Team( onlineId: Int,
 
 // TODO retrieval could be done nicer using anorm
 object Team {
-  def main(args: Array[String]) = {
-    println(allGroups)
-  }
-  def allTeams: List[Team] = {
 
-    val connection = DriverManager.getConnection(url, user, pw)
-    val statement = connection.createStatement
-
-    var teams = List[Team]()
-    val resultTeam = statement.executeQuery(s"select * from team")
-    while(resultTeam.next) {
-      val t = new Team(resultTeam.getInt("onlineid"),
-        resultTeam.getString("name"),
-        resultTeam.getString("groupchar")(0),
-        resultTeam.getInt("round"),
-        resultTeam.getString("iconurl"),
-        resultTeam.getInt("gamesplayed"),
-        resultTeam.getInt("wins"),
-        resultTeam.getInt("losses"),
-        resultTeam.getInt("draws"),
-        resultTeam.getInt("goalsscored"),
-        resultTeam.getInt("goalsgotten"),
-        resultTeam.getInt("points"))
-      teams ::= t
+  val teamParser = {
+    get[Int]("onlineId")~
+    get[String]("name")~
+    get[String]("groupchar")~
+    get[Int]("round")~
+    get[String]("iconurl")~
+    get[Int]("gamesplayed")~
+    get[Int]("wins")~
+    get[Int]("losses")~
+    get[Int]("draws")~
+    get[Int]("goalsscored")~
+    get[Int]("goalsgotten")~
+    get[Int]("points") map {
+      case onlineId~name~group~round~iconUrl~gamesPlayed~wins~losses~draws~goalsscored~goalsgotten~points =>
+        Team(onlineId, name, group(0), round, iconUrl, gamesPlayed, wins, losses, draws, goalsscored, goalsgotten, points)
     }
-    teams.sortBy(m=> (m.group))
   }
+
+
+  def all: List[Team] =
+    DB.withConnection { implicit conn =>
+      SQL("select * from team").as(teamParser *)
+    }
 
   // Returns grouped teams, ranked
   def allGroups: List[(Char, List[Team])] = {
-    val groupMap = allTeams.groupBy(_.group)
-    groupMap.map(t => (t._1, t._2.sortBy(t => (t.points, (t.goalsscored - t.goalsgotten))))).toList
+    val groupMap = all.groupBy(_.group)
+    groupMap.map(t => (t._1, t._2.sortBy(t => (- t.points, - (t.goalsscored - t.goalsgotten))))).toList.sortBy(_._1)
   }
 }

@@ -1,7 +1,7 @@
 package controllers
 
 import play.api.mvc._
-import models.{Player}
+import models.{Player,Match}
 
 object Application extends Controller {
 
@@ -37,6 +37,17 @@ object Application extends Controller {
     Ok(views.html.playerPage(player))
   }
 
+  def matchPage(id: String) = Action {
+    val iid = try {
+      id.toInt
+    } catch {
+      case ex: NumberFormatException => 0
+    }
+    val m = Match.getMatch(iid)
+
+    Ok(views.html.matchPage(m))
+  }
+
   def anmeldung = Action(
     Ok(views.html.anmeldung("Willkommen!"))
   )
@@ -47,6 +58,14 @@ object Application extends Controller {
 
   def begegnungen = Action(
     Ok(views.html.begegnungen())
+  )
+
+  def begegnungenGespielt = Action(
+    Ok(views.html.begegnungenGespielt())
+  )
+
+  def gruppen = Action(
+    Ok(views.html.groups())
   )
 
 

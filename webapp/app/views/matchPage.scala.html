@@ -1,0 +1,44 @@
+@(m: Match)
+
+@main("Details zum Spiel") {
+
+
+<h1>@{if(m == null) "Diesen Spieler gibt es nicht. Sorry." else m.vsString}</h1>
+
+<h2>Diese Infos stehen erst nach Turnierbeginn bereit.</h2>
+<!--<h3>Übersicht</h3>-->
+<!--<h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @models.Match.lastUpdate</h2>-->
+<!--<table>-->
+    <!--<tr>-->
+        <!--<th>Spiel</th>-->
+        <!--<th>Runde</th>-->
+        <!--<th>Datum</th>-->
+        <!--<th>Ort</th>-->
+        <!--<th>Ergebnis</th>-->
+    <!--</tr>-->
+    <!--<tr>-->
+        <!--<td>@m.vsString</td>-->
+        <!--<td>@m.group</td>-->
+        <!--<td>@m.dateString</td>-->
+        <!--<td>@m.location</td>-->
+        <!--<td>@m.resultString</td>-->
+    <!--</tr>-->
+<!--</table>-->
+
+<!--<h3>Tipps</h3>-->
+<!--Klicke auf die Namen für mehr Infos zum Spieler.<br><br>-->
+<!--<table>-->
+    <!--<tr>-->
+        <!--<th>Name</th>-->
+        <!--<th>Tipp</th>-->
+        <!--<th>Ertrag</th>-->
+    <!--</tr>-->
+    <!--@Player.all.sortBy(_.getTippPoints(m.onlineId)).reverse.map { player =>-->
+        <!--<tr>-->
+            <!--<td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.nameString</a></td>-->
+            <!--<td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.getTipp(m.onlineId)</a></td>-->
+            <!--<td><a href="/spieler/@{player.id}" style=";text-decoration:none;">@player.getTippPoints(m.onlineId)</a></td>-->
+        <!--</tr>-->
+    <!--}-->
+<!--</table>-->
+}

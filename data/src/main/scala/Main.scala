@@ -36,8 +36,14 @@ object Main {
   }
 
   def updateData = {
-    Database.updateMatches
+    try{
+      Database.updateMatches
+    } catch {
+      case ex: java.net.UnknownHostException => {
+        println(s"DID NOT UPDATE MATCH-DATA!! \n The Update will produce stale data since openLiga is no accessible! \n$ex")
+      }
+    }
     Database.updatePlayers
-    //TODO Database.updateTeams
+    Database.updateTeams
   }
 }

@@ -16,13 +16,13 @@
                 <li>
                     <a href="/">Home</a>
                 </li>
-                <li><a href="/spieler">Spieler</a>
+                <li><a href="/punkte">Spieler</a>
                     <ul class="sub-menu">
                         <li>
-                            <a href="/spieler">Teilnehmer</a>
+                            <a href="/punkte">Punkte</a>
                         </li>
                         <li>
-                            <a href="/punkte">Punkte</a>
+                            <a href="/spieler">Teilnehmer</a>
                         </li>
                         <li>
                             <a href="/anmeldung">Anmeldung</a>
@@ -31,6 +31,26 @@
                 </li>
                 <li>
                     <a href="/begegnungen">Begegnungen</a>
+                    <ul class="sub-menu">
+                        <li>
+                            <a href="/begegnungen">Ausstehend</a>
+                        </li>
+                        <li>
+                            <a href="/begegnungenGespielt">Beendet</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="/gruppen">Teams</a>
+                    <ul class="sub-menu">
+                        <li>
+                            <a href="/gruppen">Gruppen</a>
+
+                        </li>
+                        <li>
+                            <a href="/teams">Teams</a>
+                        </li>
+                    </ul>
                 </li>
             <ul>
 
@@ -43,7 +63,7 @@
 
 
             <div id="content" >
-                <div id="text" style="margin-left:10px;margin-right10px;min-height:2000px">
+                <div id="text" style="margin-bottom:30px;margin-left:10px;margin-right10px;min-height:500px">
                     @content
                 </div>
             </div>

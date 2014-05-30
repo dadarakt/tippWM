@@ -3,61 +3,57 @@
 @main("Spieler-Statistik") {
 <h1>@{if(player == null) "Diesen Spieler gibt es nicht. Sorry." else player.nameString}</h1>
 
+<h2>Diese Infos stehen erst nach Turnierbeginn bereit.</h2>
 
-<h3>Übersicht</h3>
-<table>
-    <tr>
-        <th>Name</th>
-        <th>Punkte</th>
-        <th>Richtige<br>Ergebnisse</th>
-        <th>Richtige<br>Differenzen</th>
-        <th>Richtige<br>Tendenzen</th>
-        <th>Falsche<br>Tipps</th>
+<!--<h3>Übersicht</h3>-->
+<!--<h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @models.Player.lastUpdate</h2>-->
+<!--<table>-->
+    <!--<tr>-->
+        <!--<th>Name</th>-->
+        <!--<th>Punkte</th>-->
+        <!--<th>Richtige<br>Ergebnisse</th>-->
+        <!--<th>Richtige<br>Differenzen</th>-->
+        <!--<th>Richtige<br>Tendenzen</th>-->
+        <!--<th>Falsche<br>Tipps</th>-->
 
-    </tr>
+    <!--</tr>-->
 
-    <tr>
-        <td>@player.nameString</td>
-        <td>@player.points</td>
-        <td>@player.hits</td>
-        <td>@player.diffs</td>
-        <td>@player.tendencies</td>
-        <td>@{player.tipps1.length - player.hits - player.diffs - player.tendencies}</td>
-    </tr>
+    <!--<tr>-->
+        <!--<td>@player.nameString</td>-->
+        <!--<td>@player.points</td>-->
+        <!--<td>@player.hits</td>-->
+        <!--<td>@player.diffs</td>-->
+        <!--<td>@player.tendencies</td>-->
+        <!--<td>@{player.tipps1.length - player.hits - player.diffs - player.tendencies}</td>-->
+    <!--</tr>-->
 
-</table><br><br>
+<!--</table><br><br>-->
 
-<h3>Abgegebene Tipps</h3>
-Klicke auf die Spiele um zu sehen, wie andere getippt habe.
-<table>
-    <tr>
-        <th>Spiel</th>
-        <th>Runde</th>
-        <th>Datum</th>
-        <th>Ergebnis</th>
-        <th>Getippt</th>
-        <th>Ertrag</th>
-    </tr>
-
-
-    @player.tipps1.map { tipp =>
-        <tr>
-            <td>@models.Match.getMatch(tipp.matchOnlineId).vsString</td>
-            <td>@models.Match.getMatch(tipp.matchOnlineId).group</td>
-            <td>@models.Match.getMatch(tipp.matchOnlineId).dateString</td>
-            <td>@models.Match.getMatch(tipp.matchOnlineId).resultString</td>
-            <td>@{player.tipps1.filter(_.matchOnlineId == tipp.matchOnlineId).head.tippString}</td>
-            <td>@{player.tipps1.filter(_.matchOnlineId == tipp.matchOnlineId).head.resultString }</td>
-        </tr>
-    }
+<!--<h3>Abgegebene Tipps</h3>-->
+<!--Klicke auf die Spiele um zu sehen, wie andere getippt habe.-->
+<!--<br><br>-->
+<!--<table>-->
+    <!--<tr>-->
+        <!--<th>Spiel</th>-->
+        <!--<th>Runde</th>-->
+        <!--<th>Datum</th>-->
+        <!--<th>Ergebnis</th>-->
+        <!--<th>Getippt</th>-->
+        <!--<th>Ertrag</th>-->
+    <!--</tr>-->
 
 
-</table>
-<!--@models.Match.getMatch(27259)<br>-->
-<!--@models.Match.all-->
-<!--@player.tipps1.map { tipp =>-->
-    <!--<h3>@tipp<h3>-->
+    <!--@player.tipps1.map { tipp =>-->
+        <!--<tr>-->
+            <!--<td><a href="/begegnungen/@{tipp.matchOnlineId}" style=";text-decoration:none;">@models.Match.getMatch(tipp.matchOnlineId).vsString</a></td>-->
+            <!--<td><a href="/begegnungen/@{tipp.matchOnlineId}" style=";text-decoration:none;">@models.Match.getMatch(tipp.matchOnlineId).group</a></td>-->
+            <!--<td><a href="/begegnungen/@{tipp.matchOnlineId}" style=";text-decoration:none;">@models.Match.getMatch(tipp.matchOnlineId).dateString</a></td>-->
+            <!--<td><a href="/begegnungen/@{tipp.matchOnlineId}" style=";text-decoration:none;">@models.Match.getMatch(tipp.matchOnlineId).resultString</a></td>-->
+            <!--<td><a href="/begegnungen/@{tipp.matchOnlineId}" style=";text-decoration:none;">@{player.tipps1.filter(_.matchOnlineId == tipp.matchOnlineId).head.tippString}</a></td>-->
+            <!--<td><a href="/begegnungen/@{tipp.matchOnlineId}" style=";text-decoration:none;">@{player.tipps1.filter(_.matchOnlineId == tipp.matchOnlineId).head.resultString }</a></td>-->
+        <!--</tr>-->
+    <!--}-->
 
-<!--}-->
 
+<!--</table>-->
 }

@@ -31,6 +31,10 @@ case class Team( onlineId: Int,
 // TODO retrieval could be done nicer using anorm
 object Team {
 
+  def lastUpdate = DB.withConnection { implicit conn =>
+    SQL("select lastupdate from lastupdate where id='team'").as(Player.date *).head
+  }
+
   val teamParser = {
     get[Int]("onlineId")~
     get[String]("name")~
@@ -59,5 +63,13 @@ object Team {
   def allGroups: List[(Char, List[Team])] = {
     val groupMap = all.groupBy(_.group)
     groupMap.map(t => (t._1, t._2.sortBy(t => (- t.points, - (t.goalsscored - t.goalsgotten))))).toList.sortBy(_._1)
+  }
+
+  def getTeam(id: Int) = try {
+    DB.withConnection { implicit conn =>
+      SQL(s"select * from team where onlineid='${id}'").as(teamParser *).head
+    }
+  }catch {
+    case ex: NoSuchElementException => null
   }
 }

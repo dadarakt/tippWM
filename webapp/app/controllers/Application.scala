@@ -1,7 +1,7 @@
 package controllers
 
 import play.api.mvc._
-import models.{Player,Match}
+import models.{Team, Player, Match}
 
 object Application extends Controller {
 
@@ -67,6 +67,21 @@ object Application extends Controller {
   def gruppen = Action(
     Ok(views.html.groups())
   )
+
+  def teams = Action(
+    Ok(views.html.teams())
+  )
+
+  def teamPage(id: String) = Action {
+    val iid = try {
+      id.toInt
+    } catch {
+      case ex: NumberFormatException => 0
+    }
+    val t = Team.getTeam(iid)
+
+    Ok(views.html.teamPage(t))
+  }
 
 
 //  def newPlayer = Action { implicit request =>

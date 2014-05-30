@@ -20,22 +20,22 @@
             </tr>
             @teams.take(2).map {team =>
             <tr style="color: green">
-                <td >@team.name</td>
-                <td>@team.matchesPlayed</td>
-                <td>@team.goalsscored</td>
-                <td>@team.goalsgotten</td>
-                <td>@(team.goalsscored - team.goalsgotten)</td>
-                <td>@team.points</td>
+                <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.name</a></td>
+                <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.matchesPlayed</a></td>
+                <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.goalsscored</a></td>
+                <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.goalsgotten</a></td>
+                <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@(team.goalsscored - team.goalsgotten)</a></td>
+                <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.points</a></td>
             </tr>
             }
             @teams.drop(2).take(2).map {team =>
             <tr style="color: #333">
-                <td>@team.name</td>
-                <td>@team.matchesPlayed</td>
-                <td>@team.goalsscored</td>
-                <td>@team.goalsgotten</td>
-                <td>@(team.goalsscored - team.goalsgotten)</td>
-                <td>@team.points</td>
+                <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.name</a></td>
+                <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.matchesPlayed</a></td>
+                <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.goalsscored</a></td>
+                <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.goalsgotten</a></td>
+                <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@(team.goalsscored - team.goalsgotten)</a></td>
+                <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.points</a></td>
             </tr>
             }
         </table>

@@ -1,0 +1,75 @@
+@(t: Team)
+
+@main("Team-Statistik") {
+<h1>@{if(t == null) "Dieses Team gibt es nicht. Sorry." else t.name}</h1>
+
+<h3>Übersicht</h3>
+<h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @models.Team.lastUpdate</h2>
+<table>
+    <tr>
+        <th>Team</th>
+        <th>Runde</th>
+        <th>Gruppe</th>
+        <th>#Spiele</th>
+        <th>Siege</th>
+        <th>Lost</th>
+        <th>Draw</th>
+        <th>Tore +</th>
+        <th>Tore - </th>
+        <th>Diff</th>
+        <th>Punkte</th>
+    </tr>
+    <tr>
+    <tr>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.name</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@{models.Match.nameForRound(t.round)}</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.group</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.matchesPlayed</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.wins</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.losses</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.draws</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.goalsscored</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.goalsgotten</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@{t.goalsscored - t.goalsgotten}</a></td>
+        <td><a href="/team/@{t.onlineId}" style=";text-decoration:none;">@t.points</a></td>
+    </tr>
+</table><br><br>
+
+<h3>Ausstehende Spiele</h3>
+<table>
+    <tr>
+        <th>Spiel</th>
+        <th>Runde</th>
+        <th>Datum</th>
+        <th>Ergebnis</th>
+    </tr>
+    @models.Match.all.filter(m => ! m.isFinished && (m.teamA == t.name || m.teamB == t.name)).map { m =>
+        <tr>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.vsString</a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.roundString</a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.date</a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.resultString</a></td>
+        </tr>
+
+    }
+
+</table>
+<h3>Gespielte Spiele</h3>
+        <table>
+<tr>
+    <th>Spiel</th>
+    <th>Runde</th>
+    <th>Datum</th>
+    <th>Ergebnis</th>
+    </tr>
+    @models.Match.all.filter(m => m.isFinished && (m.teamA == t.name || m.teamB == t.name)).map { m =>
+            <tr>
+                <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.vsString</a></td>
+                <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.roundString</a></td>
+                <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.date</a></td>
+                <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.resultString</a></td>
+            </tr>
+
+    }
+        </table>
+}

@@ -1,0 +1,28 @@
+@main("Die Teams der WM") {
+
+
+<h3>Teams</h3>
+Klicke auf die Teams um die Spiele zu sehen.
+<br><br>
+<h2 style="text-align:left;font:bold 12px verdana, sans-serif">Letztes Update der Daten: @models.Match.lastUpdate</h2>
+
+<table>
+    <tr>
+        <th>Team</th>
+        <th>Runde</th>
+        <th>Gruppe</th>
+        <th>Gespielte<br>Spiele</th>
+        <th>Punkte</th>
+    </tr>
+    <tr>
+    @models.Team.all.sortBy(t => (- t.round, t.group, - t.points)).map { team =>
+    <tr>
+        <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.name</a></td>
+        <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@{models.Match.nameForRound(team.round)}</a></td>
+        <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.group</a></td>
+        <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.matchesPlayed</a></td>
+        <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.points</a></td>
+    </tr>
+    }
+</table>
+}

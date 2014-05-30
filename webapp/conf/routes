@@ -18,6 +18,8 @@ GET     /begegnungenGespielt        controllers.Application.begegnungenGespielt
 GET     /begegnungen/*id            controllers.Application.matchPage(id)
 
 GET     /gruppen                    controllers.Application.gruppen
+GET     /teams                      controllers.Application.teams
+GET     /team/*id                   controllers.Application.teamPage(id)
 
 
 # Map static resources from the /public folder to the /assets URL path

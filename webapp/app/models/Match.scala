@@ -30,9 +30,20 @@ case class  Match( onlineId : Int,
   def locationString = s"$location, $stadium"
   def dateString = s"${sqlDateformat.format(date)}"
   def resultString = if(isFinished) s"$scoreA : $scoreB" else "--"
+
+  def roundString = s"${Match.nameForRound(groupOrderId)} ${if(groupOrderId == 1) group}"
 }
 
 object Match {
+
+  val nameForRound = Map(
+    1 -> "Vorrunde",
+    2 -> "Achtelfinale",
+    3 -> "Viertelfinale",
+    4 -> "Halbfinale",
+    5 -> "Kleines Finale",
+    6 -> "Finale"
+  )
 
   def lastUpdate = DB.withConnection { implicit conn =>
     SQL("select lastupdate from lastupdate where id='match'").as(Player.date *).head

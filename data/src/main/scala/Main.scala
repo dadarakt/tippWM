@@ -17,8 +17,10 @@ object Main {
     val scheduler = actorSystem.scheduler
     implicit val executor = actorSystem.dispatcher
 
-    // Load data, if there is something new
-   Database.initializePlayers
+    // Write out initial updates
+    Database.initializeTeams
+    Database.initializeMatches
+    Database.initializePlayers
 
     // The task which is performed to generate the data
     val task = new Runnable {
@@ -26,24 +28,26 @@ object Main {
         println(s"${new Date()}: Updating data.")
         val start = System.currentTimeMillis
         updateData
-        println(s"Update succesful. (${System.currentTimeMillis - start} ms)")
+        println(s"Update successful. (${System.currentTimeMillis - start} ms)")
       }
     }
+
     scheduler.schedule(
       initialDelay = Duration(1, TimeUnit.SECONDS),
-      interval = Duration(60, TimeUnit.MINUTES),
+      interval = Duration(2, TimeUnit.MINUTES),
       runnable = task)
   }
 
   def updateData = {
     try{
       Database.updateMatches
+      Database.updatePlayers
+      Database.updateTeams
     } catch {
       case ex: java.net.UnknownHostException => {
         println(s"DID NOT UPDATE MATCH-DATA!! \n The Update will produce stale data since openLiga is no accessible! \n$ex")
       }
     }
-    Database.updatePlayers
-    Database.updateTeams
+
   }
 }

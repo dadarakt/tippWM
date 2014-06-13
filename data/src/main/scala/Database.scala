@@ -19,8 +19,8 @@ object Database {
   val pw    = ""
 
   // for retrieving the data online
-//  val leagueShortcut = "WM-2014"
-  val leagueShortcut = "test-wm"
+  val leagueShortcut = "WM-2014"
+//  val leagueShortcut = "test-wm"
   val leagueID = 676
   val season = 2014
 
@@ -32,14 +32,6 @@ object Database {
   val rawDateformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
   rawDateformat.setTimeZone(TimeZone.getTimeZone("utc"))
   val sqlDateformat =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-
-  // Initializes the tables into the given database, can only be done online
-  def main(args: Array[String]) = {
-    // The database
-    loadData
-//    println(Player.allPlayers.mkString("\n\n"))
-//    println(Match.allMatches.mkString("\n\n"))
-  }
 
   def loadData = {
     initializeTeams
@@ -55,8 +47,8 @@ object Database {
   }
 
   def updateMatches: Unit = {
-    val connection = DriverManager.getConnection(url, user, pw)
-    val statement = connection.createStatement
+    val conn = DriverManager.getConnection(url, user, pw)
+    val statement = conn.createStatement
 
     for {
       m <- Match.unfinishedMatches if(m.date.before(new java.util.Date))
@@ -73,21 +65,31 @@ object Database {
         </soap12:Body>
       </soap12:Envelope>)
 
+      // Game is finished, write down the final result to the DB
       if(gameraw.getElementsByTag("matchisfinished").text.toBoolean) {
         println(s"Match ${m.teamA} vs. ${m.teamB} is finished! Updating...")
+        // retrieve only the final result
+        val matchresults = gameraw.getElementsByTag("matchresult")
+        val finalResult = matchresults.filter(_.getElementsByTag("resultname").text == "Endergebnis").head
 
-        val scoreA = gameraw.getElementsByTag("pointsteam1").first.text.toInt
-        val scoreB = gameraw.getElementsByTag("pointsteam2").first.text.toInt
-
+        val scoreA = finalResult.getElementsByTag("pointsteam1").text.toInt
+        val scoreB = finalResult.getElementsByTag("pointsteam2").text.toInt
 
         println(s"updating game ${gameraw.getElementsByTag("nameteam1").text} vs ${gameraw.getElementsByTag("nameteam2").text} to" +
           s"$scoreA : $scoreB")
         statement.execute(s"UPDATE matches SET isfinished='1', scorea='$scoreA', scoreb='$scoreB' where onlineid='$id'")
+      } else { // Update the intermediate result so people can see what happens if...
+        val goals = gameraw.getElementsByTag("goal").last
+        val scoreA = goals.getElementsByTag("goalscoreteam1").text.toInt
+        val scoreB = goals.getElementsByTag("goalscoreteam2").text.toInt
+        println(s"updating game ${gameraw.getElementsByTag("nameteam1").text} vs ${gameraw.getElementsByTag("nameteam2").text} to" +
+          s" intermediate result $scoreA : $scoreB")
+        statement.execute(s"UPDATE matches SET scorea='$scoreA', scoreb='$scoreB' where onlineid='$id'")
       }
     }
     val date = sqlDateformat.format(new java.util.Date())
-    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='match'")
-    connection.close
+    statement.execute(s"INSERT into lastupdate value ('match', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
+    conn.close
   }
 
   def initializeMatches: Unit = {
@@ -124,29 +126,32 @@ object Database {
     val conn = DriverManager.getConnection(url, user, pw)
     val statement = conn.createStatement
 
-    for (game <- gamesRaw) {
-      val team1 = game.getElementsByTag("nameteam1").text
-      val team2 = game.getElementsByTag("nameteam2").text
+    for (m <- gamesRaw) {
+      val team1 = m.getElementsByTag("nameteam1").text
+      val team2 = m.getElementsByTag("nameteam2").text
       val groupName = {
         val result = statement.executeQuery(s"select groupchar from team where name='$team1'")
         result.next()
         val c = result.getString("groupchar")
         c
       }
-      val isFinished = game.getElementsByTag("matchisfinished").text.toBoolean
+      val isFinished = m.getElementsByTag("matchisfinished").text.toBoolean
       val (score1, score2) = if(isFinished){
-        (game.getElementsByTag("pointsteam1").first.text.toInt,
-         game.getElementsByTag("pointsteam2").first.text.toInt)
+        println(s"Match ${team1} vs. ${team2} is finished! Updating...")
+        val matchresults = m.getElementsByTag("matchresult")
+        val finalResult = matchresults.filter(_.getElementsByTag("resultname").text == "Endergebnis").head
+        (finalResult.getElementsByTag("pointsteam1").text.toInt,
+        finalResult.getElementsByTag("pointsteam2").text.toInt)
       } else {
         (-1, -1)
       }
-      val date          = sqlDateformat.format(rawDateformat.parse(game.getElementsByTag("matchdatetimeutc").text))
-      val location      = game.getElementsByTag("locationcity").text
-      val stadium       = game.getElementsByTag("locationstadium").text
-      val onlineId      = game.getElementsByTag("matchid").text.toInt
-      val groupId       = game.getElementsByTag("groupid").text.toInt
-      val grouporderid  = game.getElementsByTag("grouporderid").text.toInt
-      val groupname     = game.getElementsByTag("groupname").text
+      val date          = sqlDateformat.format(rawDateformat.parse(m.getElementsByTag("matchdatetimeutc").text))
+      val location      = m.getElementsByTag("locationcity").text
+      val stadium       = m.getElementsByTag("locationstadium").text
+      val onlineId      = m.getElementsByTag("matchid").text.toInt
+      val groupId       = m.getElementsByTag("groupid").text.toInt
+      val grouporderid  = m.getElementsByTag("grouporderid").text.toInt
+      val groupname     = m.getElementsByTag("groupname").text
 
       try {
         statement.execute(s"INSERT INTO matches VALUES " +
@@ -159,7 +164,7 @@ object Database {
       }
     }
     val date = sqlDateformat.format(new java.util.Date())
-    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='match'")
+    statement.execute(s"INSERT into lastupdate value ('match', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
     conn.close
   }
 
@@ -217,13 +222,13 @@ object Database {
       }
     }
     val date = sqlDateformat.format(new java.util.Date())
-    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='team'")
+    statement.execute(s"INSERT into lastupdate value ('team', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
     conn.close()
   }
 
   def updateTeams = {
-    val connection = DriverManager.getConnection(url, user, pw)
-    val statement = connection.createStatement
+    val conn = DriverManager.getConnection(url, user, pw)
+    val statement = conn.createStatement
 
     var teamMap: Map[String, (Int,Int,Int,Int,Int,Int)] = Map()
     for{
@@ -276,12 +281,10 @@ object Database {
       )
     }
     val date = sqlDateformat.format(new java.util.Date())
-    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='team'")
+    statement.execute(s"INSERT into lastupdate value ('team', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
 
-    connection.close()
+    conn.close
   }
-
-
 
 
   def initializePlayers = {
@@ -291,13 +294,12 @@ object Database {
 
     val allMatches  = Match.allMatches
 
+    val conn = DriverManager.getConnection(url, user, pw)
+    val statement = conn.createStatement
 
 
     // parses a line from the file which represents a player
     def parseSingleResponse(response: List[String]): Unit = {
-
-      val conn = DriverManager.getConnection(url, user, pw)
-      val statement = conn.createStatement
 
       val firstName = response(1)
       val lastName  = response(2)
@@ -319,8 +321,10 @@ object Database {
       } catch {
         case ex: com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException =>
           println(s"Player $firstName, $lastName was already in the DB. Not creating entry!!!")
+
       }
 
+      //println(response.drop(5).take(48).zipWithIndex).length()
       // Update the tipps to the current state from the tabular
       try{
         val dbId = statement.executeQuery(s"select id from player where email='$email'")
@@ -332,7 +336,7 @@ object Database {
           tipps = tipp.split(':').toList.map(_.toInt)
           teams = header(index+5).split('-').map(_.trim)
         } yield {
-          assert(teams(0) == allMatches(index).teamA && teams(1) == allMatches(index).teamB)
+          //assert(teams(0) == allMatches(index).teamA && teams(1) == allMatches(index).teamB)
           new Tipp(
             allMatches(index).onlineId,
             iid,
@@ -343,27 +347,27 @@ object Database {
       } catch {
         case NonFatal(ex) => {
           println(s"Updating tipps for player $firstName $lastName failed due to $ex")
+          throw(ex)
         }
       }
 
-      // Update the last edit
       val date = sqlDateformat.format(new java.util.Date())
-      statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='player'")
-      conn.close()
+      //statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='player'")
+      statement.execute(s"INSERT into lastupdate value ('player', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
     }
-
 
     // Iterate over all entries coming from the google-form
     for{
       responseLine <- rawData
       response = responseLine.split(',').toList if(!response.isEmpty && response(0) != "")
     } (parseSingleResponse(response))
+    conn.close()
   }
 
   def updatePlayers = {
     // update the stats to the database
-    val connection = DriverManager.getConnection(url, user, pw)
-    val statement = connection.createStatement
+    val conn = DriverManager.getConnection(url, user, pw)
+    val statement = conn.createStatement
     for {
       player <- Player.allPlayers
       stats = player.results
@@ -383,8 +387,8 @@ object Database {
         s"WHERE email='${player.email}'")
     }
     val date = sqlDateformat.format(new java.util.Date())
-    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='player'")
+    statement.execute(s"INSERT into lastupdate value ('player', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
 
-    connection.close()
+    conn.close
   }
 }

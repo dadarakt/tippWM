@@ -1,0 +1,6 @@
+#!/bin/bash
+
+mysql < playerTable.sql
+mysql < matchTable.sql
+mysql < teamTable.sql
+mysql < updateTable.sql

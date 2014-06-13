@@ -21,9 +21,7 @@ case class Team( onlineId: Int,
 }
 
 object Team {
-  def main(args: Array[String]) = {
-    println(allGroups)
-  }
+
   def allTeams: List[Team] = {
 
     val connection = DriverManager.getConnection(Database.url, Database.user, Database.pw)
@@ -52,7 +50,6 @@ object Team {
 
   // Returns grouped teams, ranked
   def allGroups: List[(Char, List[Team])] = {
-    val groupMap = allTeams.groupBy(_.group)
-    groupMap.map(t => (t._1, t._2.sortBy(t => (t.points, (t.goalsscored - t.goalsgotten))))).toList
+    allTeams.groupBy(_.group).map(t => (t._1, t._2.sortBy(t => (t.points, (t.goalsscored - t.goalsgotten))))).toList
   }
 }

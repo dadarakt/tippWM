@@ -20,7 +20,7 @@
             </tr>
             @teams.take(2).map {team =>
             <tr style="color: green">
-                <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.name</a></td>
+                <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;"><img src="@team.iconUrl"> @team.name</a></td>
                 <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.matchesPlayed</a></td>
                 <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.goalsscored</a></td>
                 <td><a href="/team/@{team.onlineId}" style="color: green;text-decoration:none;">@team.goalsgotten</a></td>
@@ -30,7 +30,7 @@
             }
             @teams.drop(2).take(2).map {team =>
             <tr style="color: #333">
-                <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.name</a></td>
+                <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;"><img src="@team.iconUrl"> @team.name</a></td>
                 <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.matchesPlayed</a></td>
                 <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.goalsscored</a></td>
                 <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.goalsgotten</a></td>

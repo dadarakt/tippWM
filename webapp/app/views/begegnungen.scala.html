@@ -9,20 +9,22 @@ Klicke auf die Spiele um die Tipps zu sehen.
 
     <table>
         <tr>
-            <th>Spiel</th>
+            <th>Team A</th>
+            <th>Ergebnis</th>
+            <th>Team B</th>
             <th>Runde</th>
             <th>Datum</th>
             <th>Ort</th>
-            <th>Ergebnis</th>
         </tr>
         <tr>
             @models.Match.all.filter(! _.isFinished).map { m =>
         <tr>
-            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.vsString</a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style="text-decoration:none;"><div align="right">@m.teamA <img src="@{Team.getTeam(m.teamA).iconUrl}"></div></a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style="text-decoration:none;"><div align="center">@m.resultString</div></a></td>
+            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;"><img src="@{Team.getTeam(m.teamB).iconUrl}"> @m.teamB</a></td>
             <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.roundString</a></td>
             <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.dateString</a></td>
             <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.location</a></td>
-            <td><a href="/begegnungen/@{m.onlineId}" style=";text-decoration:none;">@m.resultString</a></td>
         </tr>
         }
     </table>

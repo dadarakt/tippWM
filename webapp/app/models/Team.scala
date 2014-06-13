@@ -72,4 +72,12 @@ object Team {
   }catch {
     case ex: NoSuchElementException => null
   }
+
+  def getTeam(name: String) = try{
+    DB.withConnection { implicit conn =>
+      SQL(s"select * from team where name='${name}'").as(teamParser *).head
+    }
+  }catch {
+    case ex: NoSuchElementException => null
+  }
 }

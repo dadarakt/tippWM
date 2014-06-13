@@ -7,13 +7,6 @@ import json._
 /**
  * Defines the needed datastructures to represent the worlcup
  */
-
-object Data {
-  def main(args: Array[String]) = {
-    println(Player.allPlayers.map(_.tipps))
-  }
-}
-
 case class Player(firstName: String,
                   lastName: String,
                   nickName: String,

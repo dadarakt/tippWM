@@ -17,7 +17,7 @@ Klicke auf die Teams um die Spiele zu sehen.
     <tr>
     @models.Team.all.sortBy(t => (- t.round, t.group, - t.points)).map { team =>
     <tr>
-        <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.name</a></td>
+        <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;"><img src="@team.iconUrl"> @team.name</a></td>
         <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@{models.Match.nameForRound(team.round)}</a></td>
         <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.group</a></td>
         <td><a href="/team/@{team.onlineId}" style=";text-decoration:none;">@team.matchesPlayed</a></td>

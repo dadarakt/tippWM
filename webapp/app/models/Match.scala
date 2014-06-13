@@ -46,7 +46,7 @@ object Match {
   )
 
   def lastUpdate = DB.withConnection { implicit conn =>
-    SQL("select lastupdate from lastupdate where id='match'").as(Player.date *).head
+    SQL("select lastupdate from lastupdate where id='match'").as(Player.date *).headOption.getOrElse(new Date())
   }
 
   val matchParser = {
@@ -96,5 +96,11 @@ object Match {
     if(n > matches.length) matches else matches.take(n)
   }
 
+  def nextMatches(n: Int) = {
+    val matches = all.filter(! _.isFinished).sortBy(_.date)
+    if(n > matches.length) matches else matches.take(n)
+  }
+
+  def nextMatch = lastMatches(1)
   def lastMatch = lastMatches(1)
 }

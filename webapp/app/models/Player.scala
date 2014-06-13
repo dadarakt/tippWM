@@ -88,7 +88,6 @@ case class Player(id: Int,
     val tipp = tipps1.find(_.matchOnlineId == matchId).getOrElse(Tipp(0,0,0,0))
     tipp.resultString
   }
-
 }
 
 object Player {
@@ -107,7 +106,7 @@ object Player {
   }
 
   def lastUpdate = DB.withConnection { implicit conn =>
-    SQL("select lastupdate from lastupdate where id='player'").as(date *).head
+    SQL("select lastupdate from lastupdate where id='player'").as(date *).headOption.getOrElse(new Date())
   }
 
   // parser to read a player from the DB
@@ -120,7 +119,7 @@ object Player {
     get[String]("guessfirst")~
     get[String]("guesssecond")~
     get[String]("guessthird")~
-    get[String]("tipps1")~
+    get[Option[String]]("tipps1")~
     get[Option[String]]("scoredMatches")~
     get[Option[String]]("falseMatches")~
     get[Option[String]]("missedMatches")~
@@ -137,7 +136,10 @@ object Player {
             scoredMatches~falseMatches~missedMatches~
             points~pointstime~tendencies~tendenciestime~diffs~diffstime~hits~hitstime => {
 
-      val tipplist = tipps1.replaceAll("Tipp", "models.Tipp").unpickle[List[Tipp]]
+      val tipplist = tipps1 match {
+          case Some(tipps) => tipps1.get.replaceAll("Tipp", "models.Tipp").unpickle[List[Tipp]]
+          case None => List()
+        }
 
         Player(id, firstName, lastName, nickName, email,
           guessfirst, guesssecond, guessthird, tipplist,

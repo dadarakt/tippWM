@@ -62,7 +62,9 @@ tr:nth-child(even) {
 tr:hover
 {
     background-color: lighten(@color2, 5%);
-    -webkit-box-shadow: 0 0 20px #000;
+    -moz-box-shadow: 0 0 10px #ccc;
+    -webkit-box-shadow: 0 0 10px #ccc;
+    box-shadow: 0 0 10px #ccc;
 }
 
 #menu {
@@ -132,11 +134,9 @@ a.box {
 }
 
 a.box:hover {
-
     -moz-box-shadow: 0 0 10px #ccc;
     -webkit-box-shadow: 0 0 10px #ccc;
     box-shadow: 0 0 10px #ccc;
-    background-color:rgba(85,85,85,0.5);
 }
 
 /* THE MENUS */
@@ -177,8 +177,10 @@ ul#menu  a:hover  {
     font:bold 20px verdana, sans-serif;
     text-align:left;
     display:inline-block;
-    -webkit-box-shadow: 0 0 100px #000;
-    background-color: rgba(85,85,85,0.6);
+    -moz-box-shadow: 0 0 100px black;
+    -webkit-box-shadow: 0 0 50px black;
+    box-shadow: 0 0 50px black;
+    background-color: rgba(85,85,85,0.0);
 
 }
 

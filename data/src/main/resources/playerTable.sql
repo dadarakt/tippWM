@@ -1,4 +1,4 @@
-USE tippWM
+USE tippwm
 
 
 CREATE TABLE player (

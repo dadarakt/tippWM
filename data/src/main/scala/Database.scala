@@ -1,3 +1,5 @@
+import _root_.java.sql.DriverManager
+import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.TimeZone
 import java.sql.DriverManager
@@ -47,49 +49,205 @@ object Database {
   }
 
   def updateMatches: Unit = {
-    val conn = DriverManager.getConnection(url, user, pw)
-    val statement = conn.createStatement
+    // open a connection to the database to update the data
+    val connection = DriverManager.getConnection(url, user, pw)
+    val statement = connection.createStatement
 
-    for {
-      m <- Match.unfinishedMatches if(m.date.before(new java.util.Date))
-      id = m.onlineId
-    } {
-
-      println(s"Looking if match ${m.teamA} vs. ${m.teamB} is finished.")
-      val gameraw = Retrieval.getDataOnline(
-        <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+    val start = System.currentTimeMillis
+    // First get all available groupOrderIDs which represent the different stages of the tournament
+    val groupOrderIds = Retrieval.getDataOnline(
+      <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
         <soap12:Body>
-          <GetMatchByMatchID xmlns="http://msiggi.de/Sportsdata/Webservices">
-            <MatchID>{id}</MatchID>
-          </GetMatchByMatchID>
+          <GetAvailGroups xmlns="http://msiggi.de/Sportsdata/Webservices">
+            <leagueShortcut>{leagueShortcut}</leagueShortcut>
+            <leagueSaison>{season}</leagueSaison>
+          </GetAvailGroups>
         </soap12:Body>
-      </soap12:Envelope>)
+      </soap12:Envelope>).getElementsByTag("grouporderid").text.split(' ').toList
 
-      // Game is finished, write down the final result to the DB
-      if(gameraw.getElementsByTag("matchisfinished").text.toBoolean) {
-        println(s"Match ${m.teamA} vs. ${m.teamB} is finished! Updating...")
-        // retrieve only the final result
-        val matchresults = gameraw.getElementsByTag("matchresult")
-        val finalResult = matchresults.filter(_.getElementsByTag("resultname").text == "Endergebnis").head
+    println(s"\tFound groups $groupOrderIds")
 
-        val scoreA = finalResult.getElementsByTag("pointsteam1").text.toInt
-        val scoreB = finalResult.getElementsByTag("pointsteam2").text.toInt
+    val allMatches = Retrieval.getDataOnline(
+      <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+        <soap12:Body>
+          <GetMatchdataByLeagueSaison xmlns="http://msiggi.de/Sportsdata/Webservices">
+            <leagueShortcut>{leagueShortcut}</leagueShortcut>
+            <leagueSaison>{season}</leagueSaison>
+          </GetMatchdataByLeagueSaison>
+        </soap12:Body>
+      </soap12:Envelope>
+    ).getElementsByTag("matchdata")
 
-        println(s"updating game ${gameraw.getElementsByTag("nameteam1").text} vs ${gameraw.getElementsByTag("nameteam2").text} to" +
-          s"$scoreA : $scoreB")
-        statement.execute(s"UPDATE matches SET isfinished='1', scorea='$scoreA', scoreb='$scoreB' where onlineid='$id'")
-      } else { // Update the intermediate result so people can see what happens if...
-        val goals = gameraw.getElementsByTag("goal").last
-        val scoreA = goals.getElementsByTag("goalscoreteam1").text.toInt
-        val scoreB = goals.getElementsByTag("goalscoreteam2").text.toInt
-        println(s"updating game ${gameraw.getElementsByTag("nameteam1").text} vs ${gameraw.getElementsByTag("nameteam2").text} to" +
-          s" intermediate result $scoreA : $scoreB")
-        statement.execute(s"UPDATE matches SET scorea='$scoreA', scoreb='$scoreB' where onlineid='$id'")
+    //println(allTheMatches)
+    // Get all the matches as a flatted list of matches (xml-elements)
+//    val allMatches = groupOrderIds flatMap  { groupOrderId =>
+//      Retrieval.getDataOnline(
+//        <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+//          <soap12:Body>
+//            <GetMatchdataByGroupLeagueSaison xmlns="http://msiggi.de/Sportsdata/Webservices">
+//              <groupOrderID>{groupOrderId}</groupOrderID>
+//              <leagueShortcut>{leagueShortcut}</leagueShortcut>
+//              <leagueSaison>{season}</leagueSaison>
+//            </GetMatchdataByGroupLeagueSaison>
+//          </soap12:Body>
+//        </soap12:Envelope>
+//      ).getElementsByTag("matchdata")}
+
+      println("\tTime for retrieval: " + (System.currentTimeMillis - start))
+    // Check if the match is already in the database and proceed accordingly
+    val matchesWithId = statement.executeQuery(s"SELECT onlineid from matches")
+
+    var idsInDb = List[Int]()
+    while(matchesWithId.next){
+      //val tull = matchesWithId.getInt("onlineId")
+      //println(matchesWithId.getInt("onlineId"))
+      idsInDb ::= matchesWithId.getInt("onlineId")
+    }
+
+
+    // Then walk over all matches and update the data to the database
+    for {
+      matchRaw <- allMatches
+      onlineId  = matchRaw.getElementsByTag("matchid").text.toInt
+    } {
+      if (idsInDb contains onlineId) {
+        val isFinished = matchRaw.getElementsByTag("matchisfinished").text.toBoolean
+        val (scorea: Int, scoreb: Int) = if (isFinished) {
+          val resultScores =  matchRaw.getElementsByTag("matchresult") map {
+              m => {
+                (m.getElementsByTag("pointsteam1").text.toInt, m.getElementsByTag("pointsteam2").text.toInt)
+              }
+          }
+
+          resultScores.sortBy({m => m._1 + m._2}).lastOption match {
+            case Some(scores) => scores
+            case None =>{
+              println(s"\tERROR: No valid scores for finished match with id $onlineId")
+            }
+          }
+
+        } else {
+          val result = matchRaw.getElementsByTag("goal").lastOption
+          if (result.isDefined) {
+            result.get.getElementsByTag("goalscoreteam1").text.toInt
+            result.get.getElementsByTag("goalscoreteam2").text.toInt
+          } else {
+            // This is the case where there are no goals yet
+            (-1,-1)
+          }
+        }
+        println(s"\tUpdates match with id $onlineId to $scorea : $scoreb")
+        // Finally output the update to the database
+        statement.execute(s"UPDATE matches SET " +
+          s"scorea='$scorea'," +
+          s"scoreb='$scoreb', " +
+          s"isfinished='${if(isFinished) 1 else 0}'" +
+          s"WHERE onlineid='$onlineId'"
+        )
+
+      } else {
+        // The match was not in the database, create the entry
+        println(s"\t Match with id $onlineId was not yet in the DB, entering it now!")
+        val team1 = matchRaw.getElementsByTag("nameteam1").text
+        val team2 = matchRaw.getElementsByTag("nameteam2").text
+        val groupName = {
+          val result = statement.executeQuery(s"select groupchar from team where name='$team1'")
+          result.next()
+          val c = result.getString("groupchar")
+          c
+        }
+        val isFinished = matchRaw.getElementsByTag("matchisfinished").text.toBoolean
+        val (scorea: Int, scoreb: Int) = if (isFinished) {
+          val resultScores =  matchRaw.getElementsByTag("matchresult") map {
+            m => {
+              (m.getElementsByTag("pointsteam1").text.toInt, m.getElementsByTag("pointsteam2").text.toInt)
+            }
+          }
+
+          resultScores.sortBy({m => m._1 + m._2}).lastOption match {
+            case Some(scores) => scores
+            case None =>{
+              println(s"\tERROR: No valid scores for finished match with id $onlineId")
+            }
+          }
+
+        } else {
+          val result = matchRaw.getElementsByTag("goal").lastOption
+          if (result.isDefined) {
+            result.get.getElementsByTag("goalscoreteam1").text.toInt
+            result.get.getElementsByTag("goalscoreteam2").text.toInt
+          } else {
+            // This is the case where there are no goals yet
+            (-1,-1)
+          }
+        }
+        val date          = sqlDateformat.format(rawDateformat.parse(matchRaw.getElementsByTag("matchdatetimeutc").text))
+        val location      = matchRaw.getElementsByTag("locationcity").text
+        val stadium       = matchRaw.getElementsByTag("locationstadium").text
+        val onlineid      = matchRaw.getElementsByTag("matchid").text.toInt
+        val groupId       = matchRaw.getElementsByTag("groupid").text.toInt
+        val grouporderid  = matchRaw.getElementsByTag("grouporderid").text.toInt // Indicates which round it is
+        val groupname     = matchRaw.getElementsByTag("groupname").text
+
+        statement.execute(s"INSERT INTO matches VALUES " +
+          s"(DEFAULT, '$team1', '$team2', '$groupName', '$date', '$location', '$stadium', '$onlineid', " +
+          s"'$groupId', '$grouporderid', '$groupname', '${if(isFinished)1 else 0}', '$scorea', '$scoreb')")
+        println(s"\tUpdated match $team1 vs. $team2, in group $groupname to the DB with result ${scorea}:${scoreb}")
       }
     }
     val date = sqlDateformat.format(new java.util.Date())
-    statement.execute(s"INSERT into lastupdate value ('match', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
-    conn.close
+    statement.execute(s"UPDATE lastupdate set lastupdate='${date}' where id='match'")
+    connection.close
+
+
+//    val conn = DriverManager.getConnection(url, user, pw)
+//    val statement = conn.createStatement
+//
+//    for {
+//      m <- Match.unfinishedMatches if(m.date.before(new java.util.Date))
+//      id = m.onlineId
+//    } {
+//
+//      println(s"Looking if match ${m.teamA} vs. ${m.teamB} is finished.")
+//      val gameraw = Retrieval.getDataOnline(
+//        <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+//        <soap12:Body>
+//          <GetMatchByMatchID xmlns="http://msiggi.de/Sportsdata/Webservices">
+//            <MatchID>{id}</MatchID>
+//          </GetMatchByMatchID>
+//        </soap12:Body>
+//      </soap12:Envelope>)
+//
+//      // Game is finished, write down the final result to the DB
+//      if(gameraw.getElementsByTag("matchisfinished").text.toBoolean) {
+//        println(s"Match ${m.teamA} vs. ${m.teamB} is finished! Updating...")
+//        // retrieve only the final result
+//        val matchresults = gameraw.getElementsByTag("matchresult")
+//        val (scoreA, scoreB, isFinished) = matchresults.filter(_.getElementsByTag("resultname").text == "Endergebnis").headOption match {
+//          case Some(res) => {
+//            (res.getElementsByTag("pointsteam1").text.toInt,
+//            res.getElementsByTag("pointsteam2").text.toInt, 1)
+//          }
+//          case None =>
+//            (-1, -1, 0)
+//        }
+//
+//        println(s"updating game ${gameraw.getElementsByTag("nameteam1").text} vs ${gameraw.getElementsByTag("nameteam2").text} to " +
+//          s"$scoreA : $scoreB")
+//
+//        statement.execute(s"UPDATE matches SET isfinished='$isFinished', scorea='$scoreA', scoreb='$scoreB' where onlineid='$id'")
+//      } else { // Update the intermediate result so people can see what happens if...
+//        val goals = gameraw.getElementsByTag("goal").last
+//        val scoreA = goals.getElementsByTag("goalscoreteam1").text.toInt
+//        val scoreB = goals.getElementsByTag("goalscoreteam2").text.toInt
+//        println(s"updating game ${gameraw.getElementsByTag("nameteam1").text} vs ${gameraw.getElementsByTag("nameteam2").text} to" +
+//          s" intermediate result $scoreA : $scoreB")
+//        statement.execute(s"UPDATE matches SET scorea='$scoreA', scoreb='$scoreB' where onlineid='$id'")
+//      }
+//    }
+//    val date = sqlDateformat.format(new java.util.Date())
+//    statement.execute(s"INSERT into lastupdate value ('match', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
+//    conn.close
   }
 
   def initializeMatches: Unit = {
@@ -230,14 +388,16 @@ object Database {
     val conn = DriverManager.getConnection(url, user, pw)
     val statement = conn.createStatement
 
+    val allMatches = Match.allMatches
+
     var teamMap: Map[String, (Int,Int,Int,Int,Int,Int)] = Map()
     for{
       team <- Team.allTeams
     } teamMap += (team.name -> (0,0,0,0,0,0))
 
-    // Crunch all matches to see how the teams scored
+    // Crunch all matches to get the scores for the vorrunde
     for{
-      m <- Match.playedMatches.filter(_.groupOrderId == 1)
+      m <- allMatches.filter(ma => ma.isFinished && ma.groupOrderId == 1) //Only use the matches from the vorrunde here
       teamA  = m.teamA
       teamB  = m.teamB
       scoreA = m.scoreA
@@ -280,12 +440,24 @@ object Database {
         s"WHERE name='${team}'"
       )
     }
+
+    // Finally update the progression of teams in the tournament to the database
+    val teamGrouping = allMatches.sortBy(_.groupOrderId)
+    for {
+      m <- teamGrouping
+    } {
+      statement.execute(s"UPDATE team SET " +
+        s"round='${m.groupOrderId}'" +
+        s"WHERE name='${m.teamA}'")
+      statement.execute(s"UPDATE team SET " +
+        s"round='${m.groupOrderId}'" +
+        s"WHERE name='${m.teamB}'")
+    }
+
     val date = sqlDateformat.format(new java.util.Date())
     statement.execute(s"INSERT into lastupdate value ('team', '$date') ON DUPLICATE KEY UPDATE lastupdate='$date'")
-
     conn.close
   }
-
 
   def initializePlayers = {
     val filename    = "src/main/resources/responses.csv"
@@ -296,7 +468,6 @@ object Database {
 
     val conn = DriverManager.getConnection(url, user, pw)
     val statement = conn.createStatement
-
 
     // parses a line from the file which represents a player
     def parseSingleResponse(response: List[String]): Unit = {
@@ -334,7 +505,7 @@ object Database {
         val tipps = (for{
           (tipp , index) <- response.drop(5).take(48).zipWithIndex
           tipps = tipp.split(':').toList.map(_.toInt)
-          teams = header(index+5).split('-').map(_.trim)
+          teams = header(index + 5).split('-').map(_.trim)
         } yield {
           //assert(teams(0) == allMatches(index).teamA && teams(1) == allMatches(index).teamB)
           new Tipp(
@@ -368,6 +539,53 @@ object Database {
     // update the stats to the database
     val conn = DriverManager.getConnection(url, user, pw)
     val statement = conn.createStatement
+
+    // First check if we can find any new tipps for the later rounds in the tournament
+    for(round <- 2 to 6) {
+      val filename    = s"src/main/resources/responses$round.csv"
+      try {
+
+        println(s"\tUpdating the player's tipps for round $round.")
+        // TODO mapping from the matches to the online ID's for the tipps
+        val rawData     = scala.io.Source.fromFile(filename).getLines
+        val header      = rawData.next.split(',').toList.drop(2) // Take only the names of the matches and not the timestamp
+
+        for {
+          playerTipp <- rawData
+          elems = playerTipp.split(',')
+          email = elems(1)
+          (tipps, head) <- elems.drop(2) zip header // DO NOT use the timestamp and email
+        } {
+
+          val dbId = statement.executeQuery(s"SELECT id from player where email='$email'")
+          if(dbId.next) {
+            val id = dbId.getInt("id")
+            val tippsInDb = statement.executeQuery(s"SELECT tipps1 from player where id='$id'")
+            tippsInDb.next
+            var currentTipps = tippsInDb.getString("tipps1").unpickle[List[Tipp]]
+            val tippedScores = tipps.split(':').toList.map(_.toInt)
+            val teams = head.split('-').map(_.trim)
+            val teama = teams.head
+            val teamb = teams.drop(1).head
+            val matchId = statement.executeQuery(s"SELECT onlineid from matches where teama='${teama}' AND teamb='$teamb'")
+            matchId.next
+            val iid = matchId.getInt("onlineId")
+            val newTipp = new Tipp(iid, id, tippedScores(0), tippedScores(1))
+            if(! currentTipps.contains(newTipp))
+              currentTipps ::= newTipp
+
+            statement.execute(s"UPDATE player SET tipps1='${currentTipps.pickle.value}' where id='$id'")
+          } else {
+            println(s"Email address $email not in the DB! Could not update tipps.")
+          }
+
+        }
+      } catch {
+        case ex: FileNotFoundException => // nothing to be done here
+      }
+    }
+
+    // Then calculate the new scores for all players and enter it to the DB
     for {
       player <- Player.allPlayers
       stats = player.results

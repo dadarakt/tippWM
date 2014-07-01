@@ -107,7 +107,7 @@ object Tipp{
       m <- Match.playedMatches.reverse
       score = tipps.find(m.onlineId == _.matchOnlineId) match {
         case Some(tipp) => getPointsForTipp(m, tipp)
-        case None       => -1 // A game where no tipp exists
+        case None       => {println(s"aaaaha: ${m.onlineId}."); 0} // A game where no tipp exists
       }
     }{
       points += score
@@ -139,7 +139,7 @@ object Tipp{
       hitsTime        ::= (m.date, hits)
       missesTime      ::= (m.date, falseTipps)
     }
-
+    println(s"-----> player ${playerId} has ${points}")
     new Stats(playerId,
       scoredMatches,
       falseTippMatches,
